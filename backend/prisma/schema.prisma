@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique @db.VarChar(50)
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  progressLogs ProgressLog[]
+  userScores   UserScore[]
+
+  @@map("users")
+}
+
+model Task {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  unit          String   @db.VarChar(50)
+  pointsPerUnit Int      @default(1) @map("points_per_unit")
+  displayOrder  Int      @default(0) @map("display_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  progressLogs ProgressLog[]
+  userScores   UserScore[]
+
+  @@map("tasks")
+}
+
+model ProgressLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  taskId      Int      @map("task_id")
+  value       Decimal  @db.Decimal(10, 2)
+  pointsEarned Int     @map("points_earned")
+  loggedDate  DateTime @default(now()) @db.Date @map("logged_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate entries for same day
+  @@unique([userId, taskId, loggedDate])
+  @@map("progress_logs")
+}
+
+model UserScore {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  taskId      Int?     @map("task_id")  // Null means overall score
+  totalPoints Int      @default(0) @map("total_points")
+  totalValue  Decimal  @default(0) @db.Decimal(10, 2) @map("total_value")
+  lastUpdated DateTime @updatedAt @map("last_updated")
+
+  // Relations
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // One score per user per task
+  @@unique([userId, taskId])
+  @@map("user_scores")
+}
