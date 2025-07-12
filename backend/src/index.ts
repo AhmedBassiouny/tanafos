@@ -3,7 +3,10 @@ import { config } from './config'
 import { errorHandler } from './middleware/errorHandler'
 import { prisma } from './config/database'
 import authRoutes from './routes/auth.routes'
-import { authenticate } from './middleware/auth'
+import taskRoutes from './routes/task.routes'
+import progressRoutes from './routes/progress.routes'
+import leaderboardRoutes from './routes/leaderboard.routes'
+import userRoutes from './routes/user.routes'
 
 
 const app = express()
@@ -19,49 +22,25 @@ app.use((req, res, next) => {
   next()
 })
 
-// Test route
-app.get('/api/hello', (req, res) => {
-  res.json({ message: 'Hello from Tanafos backend!' })
+// Health check
+app.get('/api/health', (_req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv
+  })
 })
 
-// Auth routes (public)
+// Routes
 app.use('/api/auth', authRoutes)
+app.use('/api/tasks', taskRoutes)
+app.use('/api/progress', progressRoutes)
+app.use('/api/leaderboard', leaderboardRoutes)
+app.use('/api/user', userRoutes)
 
-// Protected route example
-app.get('/api/me', authenticate, async (req: any, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        createdAt: true
-      }
-    })
-    
-    if (!user) {
-      res.status(404).json({ error: 'User not found' })
-      return
-    }
-    
-    res.json(user)
-  } catch (error) {
-    next(error)
-  }
-})
-
-// Tasks route (protected)
-app.get('/api/tasks', authenticate, async (_req, res, next) => {
-  try {
-    const tasks = await prisma.task.findMany({
-      where: { isActive: true },
-      orderBy: { displayOrder: 'asc' }
-    })
-    res.json(tasks)
-  } catch (error) {
-    next(error)
-  }
+// 404 handler
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Route not found' })
 })
 
 
@@ -69,13 +48,22 @@ app.get('/api/tasks', authenticate, async (_req, res, next) => {
 app.use(errorHandler)
 
 // Start server
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`Server running at http://localhost:${config.port}`)
   console.log(`Environment: ${config.nodeEnv}`)
+  console.log('Available routes:')
+  console.log('  - POST   /api/auth/signup')
+  console.log('  - POST   /api/auth/login')
+  console.log('  - GET    /api/tasks')
+  console.log('  - POST   /api/progress')
+  console.log('  - GET    /api/leaderboard')
+  console.log('  - GET    /api/user/stats')
 })
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...')
+  server.close()
   await prisma.$disconnect()
   process.exit(0)
 })
