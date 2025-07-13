@@ -1,14 +1,15 @@
 import React from 'react'
-import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import { auth } from '../lib/api'
 
 export const Layout: React.FC = () => {
-  const navigate = useNavigate()
   const location = useLocation()
-  const isAuthenticated = !!localStorage.getItem('token')
+  const { user, setUser } = useAuth()
 
   const handleLogout = () => {
     auth.logout()
+    setUser(null)
   }
 
   const isActive = (path: string) => location.pathname === path
@@ -27,7 +28,7 @@ export const Layout: React.FC = () => {
                 </Link>
               </div>
               
-              {isAuthenticated && (
+              {user && (
                 <div className="ml-8 flex space-x-4">
                   <Link
                     to="/dashboard"
@@ -55,13 +56,18 @@ export const Layout: React.FC = () => {
 
             {/* Right side */}
             <div className="flex items-center">
-              {isAuthenticated ? (
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-500 hover:text-gray-700 text-sm font-medium"
-                >
-                  Logout
-                </button>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  <span className="text-sm text-gray-700">
+                    Welcome, <span className="font-medium">{user.username}</span>
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                  >
+                    Logout
+                  </button>
+                </div>
               ) : (
                 <div className="space-x-4">
                   <Link
@@ -84,7 +90,7 @@ export const Layout: React.FC = () => {
       </nav>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
         <Outlet />
       </main>
     </div>

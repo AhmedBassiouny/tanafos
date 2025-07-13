@@ -22,11 +22,16 @@ api.interceptors.request.use((config) => {
 // Handle auth errors globally
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      
+      // Only redirect if not already on auth pages
+      const authPaths = ['/login', '/signup', '/']
+      if (!authPaths.includes(window.location.pathname)) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
