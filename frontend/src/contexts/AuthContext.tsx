@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { User } from '../types'
+import type { User } from '../types'
 import { user as userApi } from '../lib/api'
 
 interface AuthContextType {
@@ -34,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await userApi.getProfile()
       setUser(response.data)
     } catch (error) {
+      console.error('Auth check failed:', error)
       localStorage.removeItem('token')
       setUser(null)
     } finally {
@@ -42,7 +43,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   useEffect(() => {
-    checkAuth()
+    // Only check auth if there's a token, otherwise just set loading to false
+    const token = localStorage.getItem('token')
+    if (token) {
+      checkAuth()
+    } else {
+      setIsLoading(false)
+    }
   }, [])
 
   return (
