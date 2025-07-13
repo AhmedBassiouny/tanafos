@@ -1,21 +1,40 @@
-import { useState, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Layout } from './components/Layout'
+import { Landing, Dashboard, Leaderboard, Login, Signup } from './pages'
+
+// Protected route wrapper
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const isAuthenticated = !!localStorage.getItem('token')
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />
+}
 
 function App() {
-  const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    // Fetch from our backend
-    fetch('http://localhost:3001/api/hello')
-      .then(res => res.json())
-      .then(data => setMessage(data.message))
-      .catch(err => console.error('Error:', err))
-  }, [])
-
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Tanafos</h1>
-      <p>Message from backend: {message || 'Loading...'}</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Landing />} />
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="leaderboard"
+            element={
+              <ProtectedRoute>
+                <Leaderboard />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
