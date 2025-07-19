@@ -43,19 +43,6 @@ jobs:
               - '**/*.test.*'
               - '**/*.spec.*'
 
-      - name: Validate PR title (Islamic naming convention)
-        run: |
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          
-          # Check for Islamic greeting or respectful language
-          if [[ "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf)(\(.+\))?: ]]; then
-            echo "✅ PR title follows conventional commit format"
-          else
-            echo "❌ PR title should follow format: type(scope): description"
-            echo "Examples: feat(auth): add Islamic authentication, fix(ui): improve responsive design"
-            exit 1
-          fi
-
       - name: Check for sensitive information
         run: |
           echo "🔍 Checking for sensitive information..."

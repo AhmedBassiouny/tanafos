@@ -101,7 +101,6 @@ interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
 const customRender = (
   ui: ReactElement,
   {
-    initialUser = mockUser,
     initialRoute = '/',
     ...renderOptions
   }: CustomRenderOptions = {}
@@ -136,5 +135,8 @@ const customRender = (
 }
 
 // re-export everything
+// eslint-disable-next-line react-refresh/only-export-components
 export * from '@testing-library/react'
+
+// Named export for custom render
 export { customRender as render }

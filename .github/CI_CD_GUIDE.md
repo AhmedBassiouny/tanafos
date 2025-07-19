@@ -38,7 +38,6 @@ This guide explains the Continuous Integration and Continuous Deployment (CI/CD)
 #### Jobs:
 - **Quick Validation**: Change detection, title validation, sensitive info check
 - **Conditional Testing**: Only runs tests for changed components
-- **Islamic Guidelines Check**: Ensures code aligns with Islamic principles
 - **PR Summary**: Automated status reporting
 
 ### 3. Deployment Pipeline (`deploy.yml`)
@@ -46,7 +45,7 @@ This guide explains the Continuous Integration and Continuous Deployment (CI/CD)
 **Purpose**: Automated deployment to staging/production
 
 #### Jobs:
-- **Pre-deployment Checks**: Environment determination, Islamic intention check
+- **Pre-deployment Checks**: Environment determination
 - **Build & Test**: Comprehensive testing before deployment
 - **Staging Deployment**: Automated staging environment updates
 - **Production Deployment**: Controlled production releases
@@ -106,21 +105,6 @@ JWT_SECRET="test-jwt-secret-for-ci"
 - **Environment isolation**: Separate configs for test/staging/production
 - **Access control**: Protected branches and environment approvals
 
-## 🌙 Islamic Compliance Checks
-
-### Code Review Guidelines
-- **Purpose validation**: Ensures code serves halal purposes
-- **Content scanning**: Checks for inappropriate terminology
-- **Intention checks**: Reminds developers of Islamic purpose
-- **Gratitude expressions**: Islamic prayers and gratitude in workflows
-
-### Naming Conventions
-PR titles should follow: `type(scope): description`
-Examples:
-- `feat(auth): add Islamic authentication flow`
-- `fix(ui): improve Arabic text rendering`
-- `docs(api): update halal compliance guidelines`
-
 ## 📊 Monitoring and Reporting
 
 ### Test Results
@@ -177,16 +161,6 @@ Set up GitHub environments:
 1. Add test files to appropriate directories
 2. Update package.json scripts if needed
 3. Modify workflow files to include new test categories
-
-### Modifying Islamic Checks
-Edit the `islamic-guidelines-check` job in `pr-checks.yml`:
-```yaml
-# Add new terms to check for
-if grep -i -E "(new-haram-term|another-term)" "$file"; then
-  echo "⚠️ Found potentially inappropriate terms in $file"
-  ISSUES_FOUND=true
-fi
-```
 
 ### Deployment Customization
 Update `deploy.yml` with your actual deployment steps:
