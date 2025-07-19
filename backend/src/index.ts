@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import { config } from './config'
 import { errorHandler } from './middleware/errorHandler'
 import { prisma } from './config/database'
@@ -14,13 +15,13 @@ const app = express()
 // Middleware
 app.use(express.json())
 
-// CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173')
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE')
-  next()
-})
+// CORS configuration
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}))
 
 // Health check
 app.get('/api/health', (_req, res) => {
