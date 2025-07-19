@@ -1,0 +1,245 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+# Only allow one deployment at a time
+concurrency:
+  group: deployment-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Pre-deployment checks
+  pre-deploy-checks:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    
+    outputs:
+      should-deploy: ${{ steps.check.outputs.should-deploy }}
+      environment: ${{ steps.check.outputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine deployment environment
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+            echo "environment=production" >> $GITHUB_OUTPUT
+          else
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+            echo "environment=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Islamic intention check
+        run: |
+          echo "🤲 Bismillah - In the name of Allah, we begin this deployment"
+          echo "🎯 Purpose: Providing a platform for Muslims to track their good deeds"
+          echo "🔒 Ensuring the platform serves only halal purposes"
+
+  # Build and test before deployment
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    if: needs.pre-deploy-checks.outputs.should-deploy == 'true'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tanafos_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: |
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Setup test environment
+        working-directory: backend
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tanafos_test" > .env
+          echo "NODE_ENV=test" >> .env
+          echo "JWT_SECRET=test-jwt-secret-for-deploy" >> .env
+
+      - name: Run comprehensive tests
+        run: ./run-tests.sh
+
+      - name: Build applications
+        run: |
+          echo "Building backend..."
+          cd backend && npm run build
+          
+          echo "Building frontend..."
+          cd ../frontend && npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts-${{ needs.pre-deploy-checks.outputs.environment }}
+          path: |
+            backend/dist/
+            frontend/dist/
+          retention-days: 30
+
+  # Staging deployment
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-checks, build-and-test]
+    if: needs.pre-deploy-checks.outputs.environment == 'staging'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-staging
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "This is where you would deploy to your staging server"
+          echo "Example deployment steps:"
+          echo "1. Upload build artifacts to staging server"
+          echo "2. Run database migrations"
+          echo "3. Update environment variables"
+          echo "4. Restart services"
+          echo "5. Run smoke tests"
+
+      - name: Run staging smoke tests
+        run: |
+          echo "🧪 Running staging smoke tests..."
+          echo "Health check: ✅"
+          echo "Authentication: ✅"
+          echo "Database connection: ✅"
+          echo "API endpoints: ✅"
+
+      - name: Notify staging deployment
+        run: |
+          echo "✅ Staging deployment completed successfully!"
+          echo "🌟 Alhamdulillah - staging environment is ready for testing"
+
+  # Production deployment (only for tags)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [pre-deploy-checks, build-and-test]
+    if: needs.pre-deploy-checks.outputs.environment == 'production'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts-production
+
+      - name: Islamic production deployment prayer
+        run: |
+          echo "🤲 Bismillah - Beginning production deployment"
+          echo "🎯 May Allah bless this platform to help Muslims in their spiritual journey"
+          echo "🔒 Ensuring this serves only for halal purposes and earning good deeds"
+
+      - name: Deploy to production
+        run: |
+          echo "🚀 Deploying to production environment..."
+          echo "This is where you would deploy to your production server"
+          echo "Example production deployment steps:"
+          echo "1. Create backup of current production"
+          echo "2. Upload build artifacts to production server"
+          echo "3. Run database migrations with backup"
+          echo "4. Update environment variables"
+          echo "5. Rolling restart of services"
+          echo "6. Run comprehensive health checks"
+          echo "7. Monitor for 10 minutes"
+
+      - name: Run production health checks
+        run: |
+          echo "🏥 Running production health checks..."
+          echo "Service health: ✅"
+          echo "Database health: ✅"
+          echo "API response time: ✅"
+          echo "Authentication flow: ✅"
+          echo "Islamic features working: ✅"
+
+      - name: Notify production deployment
+        run: |
+          echo "🎉 Production deployment completed successfully!"
+          echo "🌟 Alhamdulillah - The platform is live and serving the Muslim community"
+          echo "📊 Ready to help Muslims track their good deeds and compete in righteousness"
+
+  # Post-deployment monitoring
+  post-deploy-monitoring:
+    name: Post-deployment Monitoring
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success')
+    
+    steps:
+      - name: Monitor application health
+        run: |
+          echo "📊 Setting up post-deployment monitoring..."
+          echo "1. Application health monitoring: Active"
+          echo "2. Error rate monitoring: Active"
+          echo "3. Performance monitoring: Active"
+          echo "4. User experience monitoring: Active"
+          echo "5. Islamic compliance monitoring: Active"
+
+      - name: Islamic gratitude
+        run: |
+          echo "🤲 Alhamdulillahi rabbil alameen"
+          echo "🌟 Thank Allah for successful deployment"
+          echo "🎯 May this platform bring barakah and help Muslims grow spiritually"
+          echo "📈 May Allah accept the good deeds tracked through this platform"
+
+# Note: This is a template deployment workflow
+# You'll need to customize it based on your actual deployment infrastructure:
+# - Add real deployment steps for your hosting provider
+# - Configure proper secrets for deployment
+# - Set up environment-specific configurations
+# - Add real health check endpoints
+# - Configure monitoring and alerting

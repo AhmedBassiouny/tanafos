@@ -1,4 +1,4 @@
-import { useCache } from './useCache'
+import { useCache, CacheManager } from './useCache'
 import { tasks, progress, leaderboard, user } from '../lib/api'
 import type { Task, LeaderboardEntry, UserStats } from '../types'
 
@@ -46,15 +46,10 @@ export async function logProgress(data: { taskId: number; value: number }) {
   const result = await progress.log(data)
   
   // Invalidate relevant caches
-  const { invalidate } = useCache('progress/today', progress.getToday)
-  const { invalidate: invalidateStats } = useCache('user/stats', () => user.getStats().then(res => res.data))
-  const { invalidate: invalidateOverall } = useCache('leaderboard/overall', () => leaderboard.getOverall().then(res => res.data))
-  const { invalidate: invalidateTask } = useCache(`leaderboard/task/${data.taskId}`, () => leaderboard.getByTask(data.taskId).then(res => res.data))
-  
-  invalidate()
-  invalidateStats()
-  invalidateOverall()
-  invalidateTask()
+  CacheManager.invalidate('progress/today')
+  CacheManager.invalidate('user/stats')
+  CacheManager.invalidate('leaderboard/overall')
+  CacheManager.invalidate(`leaderboard/task/${data.taskId}`)
   
   return result
 }

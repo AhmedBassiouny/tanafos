@@ -93,7 +93,7 @@ A social accountability application designed for Muslims to track their good dee
 Use these accounts to test the application:
 - **Email**: demo1@example.com **Password**: demo123
 - **Email**: demo2@example.com **Password**: demo123
-- **Email**: sarah@example.com **Password**: demo123
+- **Email**: ahmed@example.com **Password**: demo123
 
 ## 🏗️ Architecture
 
@@ -277,8 +277,8 @@ cd frontend && npm run build
 - [ ] **Import/Export**: Backup and restore functionality
 
 ### 🐛 Known Issues
-- Mobile responsiveness needs refinement on smaller screens
-- Error handling could be more user-friendly with better messaging
+- Mobile responsiveness needs refinement
+- Error handling could be more user-friendly
 
 ## 🤝 Contributing
 
@@ -321,12 +321,6 @@ For questions, issues, or suggestions:
 - **Issues**: Open a GitHub issue for bug reports or feature requests
 - **Discussions**: Use GitHub Discussions for questions and community interaction
 - **Email**: [Contact maintainer through GitHub profile]
-
-## 🙏 Acknowledgments
-
-- **Islamic Names**: Thank you to the community for contributing beautiful Islamic names for anonymization
-- **Testing**: Comprehensive test coverage for reliability
-- **Design**: Inspired by Islamic principles of modesty and beneficial competition
 
 ---
 

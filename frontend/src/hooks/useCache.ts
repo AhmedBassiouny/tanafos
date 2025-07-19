@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface CacheEntry<T> {
   data: T
@@ -6,8 +6,8 @@ interface CacheEntry<T> {
   expiry: number
 }
 
-class CacheManager {
-  private static cache = new Map<string, CacheEntry<any>>()
+export class CacheManager {
+  private static cache = new Map<string, CacheEntry<unknown>>()
   
   static set<T>(key: string, data: T, ttlMs: number = 300000) { // 5 minutes default
     this.cache.set(key, {
@@ -23,7 +23,7 @@ class CacheManager {
       this.cache.delete(key)
       return null
     }
-    return entry.data
+    return entry.data as T
   }
   
   static invalidate(key: string) {
@@ -55,7 +55,7 @@ export function useCache<T>(
   const [error, setError] = useState<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  const fetchData = async (useCache = true) => {
+  const fetchData = useCallback(async (useCache = true) => {
     if (!enabled) return
 
     // Cancel previous request
@@ -98,7 +98,7 @@ export function useCache<T>(
         setIsLoading(false)
       }
     }
-  }
+  }, [enabled, key, fetcher, ttl])
 
   const refetch = () => fetchData(false)
   const invalidate = () => {
@@ -123,7 +123,7 @@ export function useCache<T>(
         clearInterval(interval)
       }
     }
-  }, [key, enabled])
+  }, [key, enabled, fetchData, refreshInterval])
 
   return {
     data,

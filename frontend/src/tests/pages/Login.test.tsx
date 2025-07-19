@@ -95,9 +95,16 @@ describe('Login Page', () => {
         user: { id: 1, username: 'testuser', email: 'test@example.com' },
         token: 'mock-token',
       },
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {
+        headers: {},
+      },
     }
     
-    vi.mocked(api.auth.login).mockResolvedValueOnce(mockLoginResponse)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(api.auth.login).mockResolvedValueOnce(mockLoginResponse as any)
     
     render(<Login />)
     

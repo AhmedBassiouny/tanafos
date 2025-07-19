@@ -1,0 +1,12 @@
+{
+  "low": true,
+  "moderate": true,
+  "high": true,
+  "critical": true,
+  "report-type": "full",
+  "allowlist": [],
+  "skip-dev": false,
+  "path-whitelist": [],
+  "advisories-url": "https://registry.npmjs.org/-/npm/v1/security/advisories",
+  "registry": "https://registry.npmjs.org/"
+}
