@@ -1,0 +1,292 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [ main, develop ]
+
+# Cancel in-progress runs for the same PR
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Quick validation checks
+  quick-checks:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    
+    outputs:
+      backend-changed: ${{ steps.changes.outputs.backend }}
+      frontend-changed: ${{ steps.changes.outputs.frontend }}
+      tests-changed: ${{ steps.changes.outputs.tests }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            tests:
+              - 'backend/tests/**'
+              - 'frontend/src/tests/**'
+              - '**/*.test.*'
+              - '**/*.spec.*'
+
+      - name: Validate PR title (Islamic naming convention)
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          # Check for Islamic greeting or respectful language
+          if [[ "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf)(\(.+\))?: ]]; then
+            echo "✅ PR title follows conventional commit format"
+          else
+            echo "❌ PR title should follow format: type(scope): description"
+            echo "Examples: feat(auth): add Islamic authentication, fix(ui): improve responsive design"
+            exit 1
+          fi
+
+      - name: Check for sensitive information
+        run: |
+          echo "🔍 Checking for sensitive information..."
+          
+          # Check for potential secrets in changed files
+          git diff origin/main...HEAD --name-only | while read file; do
+            if [[ -f "$file" ]]; then
+              # Check for common secret patterns
+              if grep -i -E "(password|secret|key|token).*=.*['\"][^'\"]{10,}" "$file"; then
+                echo "⚠️ Potential secret found in $file - please review"
+              fi
+            fi
+          done
+
+  # Backend tests (only if backend changed)
+  backend-pr-tests:
+    name: Backend PR Tests
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: needs.quick-checks.outputs.backend-changed == 'true'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tanafos_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Setup test environment
+        working-directory: backend
+        run: |
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tanafos_test" > .env
+          echo "NODE_ENV=test" >> .env
+          echo "JWT_SECRET=test-jwt-secret-for-pr" >> .env
+
+      - name: Run database setup
+        working-directory: backend
+        run: |
+          npx prisma migrate deploy
+          npx prisma db seed
+
+      - name: TypeScript compilation check
+        working-directory: backend
+        run: npm run build
+
+      - name: Run tests with coverage
+        working-directory: backend
+        run: npm run test:coverage
+
+      - name: Comment test results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let coverageComment = '## 🧪 Backend Test Results\n\n';
+            
+            try {
+              // Try to read coverage summary if it exists
+              const coverage = JSON.parse(fs.readFileSync('./backend/coverage/coverage-summary.json', 'utf8'));
+              const total = coverage.total;
+              
+              coverageComment += `### Coverage Summary\n`;
+              coverageComment += `- **Lines**: ${total.lines.pct}%\n`;
+              coverageComment += `- **Functions**: ${total.functions.pct}%\n`;
+              coverageComment += `- **Branches**: ${total.branches.pct}%\n`;
+              coverageComment += `- **Statements**: ${total.statements.pct}%\n\n`;
+              
+              if (total.lines.pct >= 80) {
+                coverageComment += '✅ Coverage looks good! (≥80%)\n';
+              } else {
+                coverageComment += '⚠️ Coverage could be improved (<80%)\n';
+              }
+            } catch (error) {
+              coverageComment += '📊 Coverage report not available\n';
+            }
+            
+            coverageComment += '\n*May Allah accept our good work in testing! 🤲*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverageComment
+            });
+
+  # Frontend tests (only if frontend changed)
+  frontend-pr-tests:
+    name: Frontend PR Tests
+    runs-on: ubuntu-latest
+    needs: quick-checks
+    if: needs.quick-checks.outputs.frontend-changed == 'true'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run linting
+        working-directory: frontend
+        run: npm run lint
+
+      - name: TypeScript compilation check
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run tests with coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Comment test results
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let coverageComment = '## 🎨 Frontend Test Results\n\n';
+            
+            try {
+              const coverage = JSON.parse(fs.readFileSync('./frontend/coverage/coverage-summary.json', 'utf8'));
+              const total = coverage.total;
+              
+              coverageComment += `### Coverage Summary\n`;
+              coverageComment += `- **Lines**: ${total.lines.pct}%\n`;
+              coverageComment += `- **Functions**: ${total.functions.pct}%\n`;
+              coverageComment += `- **Branches**: ${total.branches.pct}%\n`;
+              coverageComment += `- **Statements**: ${total.statements.pct}%\n\n`;
+              
+              if (total.lines.pct >= 70) {
+                coverageComment += '✅ Coverage looks good! (≥70%)\n';
+              } else {
+                coverageComment += '⚠️ Coverage could be improved (<70%)\n';
+              }
+            } catch (error) {
+              coverageComment += '📊 Coverage report not available\n';
+            }
+            
+            coverageComment += '\n*Alhamdulillah for clean code! 🎯*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverageComment
+            });
+
+
+  # Summary check
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [quick-checks, backend-pr-tests, frontend-pr-tests]
+    if: always()
+    
+    steps:
+      - name: Generate PR summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const backendResult = '${{ needs.backend-pr-tests.result }}';
+            const frontendResult = '${{ needs.frontend-pr-tests.result }}';
+            const backendChanged = '${{ needs.quick-checks.outputs.backend-changed }}';
+            const frontendChanged = '${{ needs.quick-checks.outputs.frontend-changed }}';
+            
+            let summary = '## 📋 Pull Request Summary\n\n';
+            summary += '### 🔍 Changes Detected\n';
+            summary += `- Backend: ${backendChanged === 'true' ? '✅ Modified' : '⭕ No changes'}\n`;
+            summary += `- Frontend: ${frontendChanged === 'true' ? '✅ Modified' : '⭕ No changes'}\n\n`;
+            
+            summary += '### 🧪 Test Results\n';
+            
+            if (backendChanged === 'true') {
+              summary += `- Backend Tests: ${backendResult === 'success' ? '✅ Passed' : backendResult === 'failure' ? '❌ Failed' : '⏳ Skipped'}\n`;
+            }
+            
+            if (frontendChanged === 'true') {
+              summary += `- Frontend Tests: ${frontendResult === 'success' ? '✅ Passed' : frontendResult === 'failure' ? '❌ Failed' : '⏳ Skipped'}\n`;
+            }
+            
+            
+            const allPassed = (backendChanged !== 'true' || backendResult === 'success') && 
+                             (frontendChanged !== 'true' || frontendResult === 'success');
+            
+            if (allPassed) {
+              summary += '### 🎉 Ready for Review!\n';
+              summary += 'All checks passed. This PR meets our technical standards.\n\n';
+              summary += '*Great work! Ready for review. 🚀*';
+            } else {
+              summary += '### 🔧 Action Required\n';
+              summary += 'Some checks need attention before this PR can be merged.\n\n';
+              summary += '*Please review the failed checks and make necessary corrections. 📝*';
+            }
+            
+            summary += '\n\n---\n*This is an automated check by the Tanafos CI/CD pipeline*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
