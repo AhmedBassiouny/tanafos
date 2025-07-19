@@ -164,6 +164,13 @@ jobs:
           echo "PORT=3001" >> .env
           echo "JWT_SECRET=test-jwt-secret-for-ci" >> .env
 
+      - name: Run database migrations
+        working-directory: backend
+        run: |
+          npm ci
+          npx prisma migrate deploy
+          npx prisma db seed
+
       - name: Run integration test suite
         run: ./run-tests.sh
 
