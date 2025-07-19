@@ -23,7 +23,7 @@ export class CacheManager {
       this.cache.delete(key)
       return null
     }
-    return entry.data
+    return entry.data as T
   }
   
   static invalidate(key: string) {

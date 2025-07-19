@@ -1,5 +1,5 @@
-import React, { ReactElement } from 'react'
-import { render, RenderOptions } from '@testing-library/react'
+import React, { type ReactElement } from 'react'
+import { render, type RenderOptions } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '../../contexts/AuthProvider'
 import { ToastProvider } from '../../contexts/ToastContext'
@@ -11,7 +11,6 @@ export const mockUser: User = {
   username: 'testuser',
   email: 'test@example.com',
   createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
 }
 
 // Mock tasks for testing
