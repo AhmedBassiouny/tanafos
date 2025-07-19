@@ -75,59 +75,64 @@ export const LogProgressModal: React.FC<LogProgressModalProps> = ({
 
   const pointsToEarn = parseFloat(value || '0') * task.pointsPerUnit
 
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={`Log ${task.name}`}
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-            {error}
+  // Keep the same imports and logic, just update the JSX:
+
+return (
+  <Modal
+    isOpen={isOpen}
+    onClose={onClose}
+    title={`Log ${task.name}`}
+  >
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+          <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          {error}
+        </div>
+      )}
+      
+      <div>
+        <Input
+          label={`How many ${task.unit}?`}
+          type="number"
+          step="0.1"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="0"
+          autoFocus
+        />
+        
+        {value && !isNaN(parseFloat(value)) && parseFloat(value) > 0 && (
+          <div className="mt-3 bg-accent-50 text-accent-700 px-4 py-3 rounded-xl">
+            <p className="text-sm font-medium">
+              You'll earn {pointsToEarn} points
+            </p>
           </div>
         )}
-        
-        <div>
-          <Input
-            label={`How many ${task.unit}?`}
-            type="number"
-            step="0.1"
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder="0"
-            autoFocus
-          />
-          
-          {value && !isNaN(parseFloat(value)) && parseFloat(value) > 0 && (
-            <p className="mt-2 text-sm text-gray-600">
-              You'll earn <span className="font-semibold text-primary-600">
-                {pointsToEarn} points
-              </span>
-            </p>
-          )}
-        </div>
-        
-        <div className="flex space-x-3">
-          <Button
-            type="submit"
-            className="flex-1"
-            isLoading={isLoading}
-            disabled={!value || parseFloat(value) <= 0}
-          >
-            Log Progress
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="flex-1"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  )
+      </div>
+      
+      <div className="flex gap-3 pt-2">
+        <Button
+          type="submit"
+          className="flex-1"
+          isLoading={isLoading}
+          disabled={!value || parseFloat(value) <= 0}
+        >
+          Log Progress
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          className="flex-1"
+          onClick={onClose}
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+      </div>
+    </form>
+  </Modal>
+)
 }

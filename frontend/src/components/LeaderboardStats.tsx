@@ -1,5 +1,4 @@
 import React from 'react'
-import { Card } from './ui'
 
 interface LeaderboardStatsProps {
   userRank: number
@@ -22,41 +21,41 @@ export const LeaderboardStats: React.FC<LeaderboardStatsProps> = ({
   const progress = topUserPoints > 0 ? (userPoints / topUserPoints) * 100 : 0
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <Card className="text-center">
-        <p className="text-sm text-gray-600">Your Rank</p>
-        <p className="text-3xl font-bold text-primary-600 mt-1">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="bg-white rounded-2xl p-6 text-center">
+        <p className="text-sm text-slate-600">Your Rank</p>
+        <p className="text-4xl font-bold text-accent-600 mt-2">
           #{userRank || '-'}
         </p>
-        <p className="text-xs text-gray-500 mt-1">
-          out of {totalUsers} users
+        <p className="text-sm text-slate-500 mt-1">
+          of {totalUsers} users
         </p>
-      </Card>
+      </div>
       
-      <Card className="text-center">
-        <p className="text-sm text-gray-600">Percentile</p>
-        <p className="text-3xl font-bold text-green-600 mt-1">
-          Top {percentile}%
+      <div className="bg-white rounded-2xl p-6 text-center">
+        <p className="text-sm text-slate-600">Top Percentile</p>
+        <p className="text-4xl font-bold text-green-600 mt-2">
+          {percentile}%
         </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Better than {100 - percentile}% of users
+        <p className="text-sm text-slate-500 mt-1">
+          Better than {100 - percentile}%
         </p>
-      </Card>
+      </div>
       
-      <Card className="text-center">
-        <p className="text-sm text-gray-600">Points to #1</p>
-        <p className="text-3xl font-bold text-orange-600 mt-1">
+      <div className="bg-white rounded-2xl p-6 text-center">
+        <p className="text-sm text-slate-600">Points to #1</p>
+        <p className="text-4xl font-bold text-orange-600 mt-2">
           {pointsGap > 0 ? pointsGap : 0}
         </p>
-        <div className="mt-2">
-          <div className="bg-gray-200 rounded-full h-2">
+        <div className="mt-3">
+          <div className="bg-slate-200 rounded-full h-2 overflow-hidden">
             <div 
-              className="bg-primary-600 h-2 rounded-full transition-all duration-500"
+              className="bg-accent-500 h-2 rounded-full transition-all duration-500"
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

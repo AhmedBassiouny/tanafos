@@ -111,22 +111,22 @@ export const Leaderboard: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Leaderboard</h1>
-        <p className="text-gray-600 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900">Leaderboard</h1>
+        <p className="text-slate-600 mt-2">
           See how you rank against other users
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-slate-200">
         <nav className="-mb-px flex space-x-8 overflow-x-auto">
           <button
             onClick={() => setActiveTab('overall')}
             className={`
               whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm
               ${activeTab === 'overall'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'border-accent-500 text-accent-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }
             `}
           >
@@ -139,8 +139,8 @@ export const Leaderboard: React.FC = () => {
               className={`
                 whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm
                 ${activeTab === task.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-accent-500 text-accent-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                 }
               `}
             >
@@ -160,12 +160,12 @@ export const Leaderboard: React.FC = () => {
 
       {/* Leaderboard Table */}
       <Card className="p-0 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
+        <div className="px-6 py-4 border-b border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-900">
             {activeTab === 'overall' ? 'Overall Rankings' : `${activeTask?.name} Rankings`}
           </h2>
           {activeTask && (
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Ranked by total {activeTask.unit} ({activeTask.pointsPerUnit} points per {activeTask.unit})
             </p>
           )}
@@ -178,7 +178,7 @@ export const Leaderboard: React.FC = () => {
             valueLabel={activeTask?.unit || 'Value'}
           />
         ) : (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-8 text-center text-slate-500">
             No data available yet
           </div>
         )}

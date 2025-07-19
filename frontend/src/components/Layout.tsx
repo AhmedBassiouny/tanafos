@@ -16,37 +16,35 @@ export const Layout: React.FC = () => {
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between h-16">
             {/* Logo and desktop nav */}
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link to="/" className="text-xl font-bold text-primary-600">
-                  Tanafos
-                </Link>
-              </div>
+            <div className="flex items-center">
+              <Link to="/" className="text-xl font-bold text-slate-900 hover:text-accent-600 transition-colors">
+                Tanafos
+              </Link>
               
               {user && (
-                <div className="hidden sm:ml-8 sm:flex sm:space-x-4">
+                <div className="hidden sm:flex sm:items-center sm:ml-10 sm:space-x-1">
                   <Link
                     to="/dashboard"
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive('/dashboard')
-                        ? 'border-primary-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'bg-accent-50 text-accent-700'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Dashboard
                   </Link>
                   <Link
                     to="/leaderboard"
-                    className={`inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive('/leaderboard')
-                        ? 'border-primary-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'bg-accent-50 text-accent-700'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Leaderboard
@@ -56,32 +54,37 @@ export const Layout: React.FC = () => {
             </div>
 
             {/* Desktop right side */}
-            <div className="hidden sm:flex sm:items-center">
+            <div className="hidden sm:flex sm:items-center sm:space-x-4">
               {user ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-700">
-                    Welcome, <span className="font-medium">{user.username}</span>
-                  </span>
+                <>
+                  <div className="flex items-center space-x-2 text-sm text-slate-600">
+                    <div className="w-8 h-8 bg-accent-100 rounded-full flex items-center justify-center">
+                      <span className="text-accent-700 font-medium">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="font-medium text-slate-900">{user.username}</span>
+                  </div>
                   <button
                     onClick={handleLogout}
-                    className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                    className="text-sm text-slate-600 hover:text-slate-900 font-medium px-3 py-1.5 hover:bg-slate-100 rounded-lg transition-colors"
                   >
                     Logout
                   </button>
-                </div>
+                </>
               ) : (
-                <div className="space-x-4">
+                <div className="flex items-center space-x-3">
                   <Link
                     to="/login"
-                    className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+                    className="text-sm font-medium text-slate-600 hover:text-slate-900 px-3 py-1.5"
                   >
                     Login
                   </Link>
                   <Link
                     to="/signup"
-                    className="bg-primary-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-700"
+                    className="text-sm font-medium text-white bg-accent-500 hover:bg-accent-600 px-4 py-2 rounded-lg transition-colors"
                   >
-                    Sign Up
+                    Get Started
                   </Link>
                 </div>
               )}
@@ -91,7 +94,7 @@ export const Layout: React.FC = () => {
             <div className="flex items-center sm:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMobileMenuOpen ? (
@@ -107,17 +110,28 @@ export const Layout: React.FC = () => {
 
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="sm:hidden">
-            <div className="pt-2 pb-3 space-y-1">
+          <div className="sm:hidden bg-white border-t border-slate-200">
+            <div className="px-4 py-3 space-y-1">
               {user ? (
                 <>
+                  <div className="flex items-center space-x-3 px-3 py-3 border-b border-slate-100">
+                    <div className="w-10 h-10 bg-accent-100 rounded-full flex items-center justify-center">
+                      <span className="text-accent-700 font-medium text-lg">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-900">{user.username}</p>
+                      <p className="text-sm text-slate-500">{user.email}</p>
+                    </div>
+                  </div>
                   <Link
                     to="/dashboard"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block pl-3 pr-4 py-2 text-base font-medium border-l-4 ${
+                    className={`block px-3 py-2 rounded-lg text-base font-medium ${
                       isActive('/dashboard')
-                        ? 'bg-primary-50 border-primary-500 text-primary-700'
-                        : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                        ? 'bg-accent-50 text-accent-700'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Dashboard
@@ -125,45 +139,36 @@ export const Layout: React.FC = () => {
                   <Link
                     to="/leaderboard"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block pl-3 pr-4 py-2 text-base font-medium border-l-4 ${
+                    className={`block px-3 py-2 rounded-lg text-base font-medium ${
                       isActive('/leaderboard')
-                        ? 'bg-primary-50 border-primary-500 text-primary-700'
-                        : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                        ? 'bg-accent-50 text-accent-700'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
                     Leaderboard
                   </Link>
-                  <div className="border-t border-gray-200 pt-4 pb-3">
-                    <div className="px-4">
-                      <p className="text-base font-medium text-gray-800">{user.username}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="mt-3 block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                  >
+                    Logout
+                  </button>
                 </>
               ) : (
                 <>
                   <Link
                     to="/login"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                    className="block px-3 py-2 text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
                   >
                     Login
                   </Link>
                   <Link
                     to="/signup"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block pl-3 pr-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                    className="block px-3 py-2 text-base font-medium text-white bg-accent-500 hover:bg-accent-600 rounded-lg text-center"
                   >
-                    Sign Up
+                    Get Started
                   </Link>
                 </>
               )}
@@ -173,8 +178,10 @@ export const Layout: React.FC = () => {
       </nav>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
-        <Outlet />
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="animate-fade-in">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

@@ -9,14 +9,12 @@ export const Signup: React.FC = () => {
   const navigate = useNavigate()
   const { setUser } = useAuth()
   
-  // Form state
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: ''
   })
   
-  // Error state
   const [errors, setErrors] = useState({
     username: '',
     email: '',
@@ -26,18 +24,15 @@ export const Signup: React.FC = () => {
   
   const [isLoading, setIsLoading] = useState(false)
 
-  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
     
-    // Clear error when user starts typing
     if (errors[name as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
   }
 
-  // Validate form
   const validateForm = (): boolean => {
     const newErrors = {
       username: validateUsername(formData.username) || '',
@@ -50,7 +45,6 @@ export const Signup: React.FC = () => {
     return !newErrors.username && !newErrors.email && !newErrors.password
   }
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -63,13 +57,8 @@ export const Signup: React.FC = () => {
       const response = await auth.signup(formData)
       const { user, token } = response.data
       
-      // Save token
       localStorage.setItem('token', token)
-      
-      // Update auth context
       setUser(user)
-      
-      // Redirect to dashboard
       navigate('/dashboard')
     } catch (error: any) {
       const message = error.response?.data?.error || 'Something went wrong'
@@ -80,65 +69,75 @@ export const Signup: React.FC = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <Card>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Create Account</h1>
+    <div className="min-h-[80vh] flex items-center justify-center -mt-8">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Get started</h1>
+          <p className="mt-2 text-slate-600">Create your account to start tracking</p>
+        </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {errors.general && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-              {errors.general}
-            </div>
-          )}
+        <Card>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {errors.general && (
+              <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                {errors.general}
+              </div>
+            )}
+            
+            <Input
+              label="Username"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              error={errors.username}
+              placeholder="johndoe"
+              autoComplete="username"
+            />
+            
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              placeholder="you@example.com"
+              autoComplete="email"
+            />
+            
+            <Input
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              placeholder="••••••••"
+              autoComplete="new-password"
+            />
+            
+            <Button
+              type="submit"
+              className="w-full"
+              isLoading={isLoading}
+            >
+              Create Account
+            </Button>
+          </form>
           
-          <Input
-            label="Username"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            error={errors.username}
-            placeholder="johndoe"
-            autoComplete="username"
-          />
-          
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            error={errors.email}
-            placeholder="john@example.com"
-            autoComplete="email"
-          />
-          
-          <Input
-            label="Password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-            placeholder="••••••••"
-            autoComplete="new-password"
-          />
-          
-          <Button
-            type="submit"
-            className="w-full"
-            isLoading={isLoading}
-          >
-            Sign Up
-          </Button>
-        </form>
-        
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-            Log in
-          </Link>
-        </p>
-      </Card>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-600">
+              Already have an account?{' '}
+              <Link to="/login" className="font-medium text-accent-600 hover:text-accent-700">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }
