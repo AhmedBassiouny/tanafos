@@ -263,9 +263,13 @@ jobs:
               ? '✅ **All tests passed!** This PR is ready for review.\n\n🚀 **Tanafos CI/CD Pipeline Results:**\n- ✅ Backend tests\n- ✅ Frontend tests\n- ✅ Integration tests\n- ✅ Security checks\n- ✅ Build verification'
               : '❌ **Some tests failed.** Please check the workflow logs and fix the issues.\n\n💥 **Failed checks need attention before merging.**';
             
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
+            try {
+              await github.rest.issues.createComment({
+                issue_number: context.payload.pull_request.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: message
+              });
+            } catch (error) {
+              console.log('Could not comment on PR:', error.message);
+            }
