@@ -8,9 +8,9 @@ const router = Router()
 router.use(authenticate)
 
 // GET /api/leaderboard - Overall leaderboard
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: Request & { user?: any, sessionId?: string }, res: Response, next: NextFunction) => {
   try {
-    const leaderboard = await LeaderboardService.getOverallLeaderboard()
+    const leaderboard = await LeaderboardService.getOverallLeaderboard(req.sessionId, req.user?.userId)
     res.json(leaderboard)
   } catch (error) {
     next(error)
@@ -18,7 +18,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 })
 
 // GET /api/leaderboard/:taskId - Task-specific leaderboard
-router.get('/:taskId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:taskId', async (req: Request & { user?: any, sessionId?: string }, res: Response, next: NextFunction) => {
   try {
     const taskId = parseInt(req.params.taskId)
     
@@ -27,7 +27,7 @@ router.get('/:taskId', async (req: Request, res: Response, next: NextFunction) =
       return
     }
 
-    const leaderboard = await LeaderboardService.getTaskLeaderboard(taskId)
+    const leaderboard = await LeaderboardService.getTaskLeaderboard(taskId, req.sessionId, req.user?.userId)
     res.json(leaderboard)
   } catch (error) {
     next(error)

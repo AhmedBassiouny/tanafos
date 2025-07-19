@@ -8,6 +8,7 @@ import taskRoutes from './routes/task.routes'
 import progressRoutes from './routes/progress.routes'
 import leaderboardRoutes from './routes/leaderboard.routes'
 import userRoutes from './routes/user.routes'
+import debugRoutes from './routes/debug.routes'
 
 
 const app = express()
@@ -19,7 +20,8 @@ app.use(express.json())
 app.use(cors({
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id'],
+  exposedHeaders: ['x-session-id'],
   credentials: true,
   optionsSuccessStatus: 200
 }))
@@ -39,6 +41,7 @@ app.use('/api/tasks', taskRoutes)
 app.use('/api/progress', progressRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/user', userRoutes)
+app.use('/api/debug', debugRoutes)
 
 // 404 handler
 app.use((_req, res) => {

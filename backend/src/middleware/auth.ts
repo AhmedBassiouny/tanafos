@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { AuthService } from '../services/auth.service'
+import { NameAnonymizerService } from '../services/name-anonymizer.service'
 import { AppError } from './errorHandler'
 
 interface AuthRequest extends Request {
@@ -7,6 +8,7 @@ interface AuthRequest extends Request {
     userId: number
     email: string
   }
+  sessionId?: string
 }
 
 export const authenticate = async (
@@ -30,6 +32,14 @@ export const authenticate = async (
     
     // Add user info to request
     req.user = payload
+    
+    // Handle session ID for name anonymization
+    let sessionId = req.headers['x-session-id'] as string
+    if (!sessionId) {
+      sessionId = NameAnonymizerService.generateSessionId()
+      res.setHeader('x-session-id', sessionId)
+    }
+    req.sessionId = sessionId
     
     next()
   } catch (error) {

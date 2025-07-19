@@ -10,22 +10,36 @@ export const api = axios.create({
   }
 })
 
-// Add auth token to requests if it exists
+// Add auth token and session ID to requests if they exist
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  
+  const sessionId = localStorage.getItem('sessionId')
+  if (sessionId) {
+    config.headers['x-session-id'] = sessionId
+  }
+  
   return config
 })
 
-// Handle auth errors globally
+// Handle auth errors and session management globally
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Store session ID from response headers
+    const sessionId = response.headers['x-session-id']
+    if (sessionId) {
+      localStorage.setItem('sessionId', sessionId)
+    }
+    return response
+  },
   async (error) => {
     if (error.response?.status === 401) {
       // Token expired or invalid
       localStorage.removeItem('token')
+      localStorage.removeItem('sessionId')
       
       // Only redirect if not already on auth pages
       const authPaths = ['/login', '/signup', '/']
@@ -47,6 +61,7 @@ export const auth = {
   
   logout: () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('sessionId')
     window.location.href = '/login'
   }
 }
