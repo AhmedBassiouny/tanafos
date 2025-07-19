@@ -1,12 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/tanafos_test'
-    }
-  }
-})
+const prisma = new PrismaClient()
 
 beforeAll(async () => {
   // Connect to test database
