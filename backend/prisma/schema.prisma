@@ -59,6 +59,10 @@ model ProgressLog {
 
   // Prevent duplicate entries for same day
   @@unique([userId, taskId, loggedDate])
+  // Indexes for performance
+  @@index([userId, loggedDate])
+  @@index([taskId, loggedDate])
+  @@index([loggedDate])
   @@map("progress_logs")
 }
 
@@ -76,5 +80,8 @@ model UserScore {
 
   // One score per user per task
   @@unique([userId, taskId])
+  // Indexes for performance
+  @@index([totalPoints])
+  @@index([taskId, totalPoints])
   @@map("user_scores")
 }

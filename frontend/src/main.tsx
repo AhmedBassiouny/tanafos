@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthProvider'
 import { ToastProvider } from './contexts/ToastContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 

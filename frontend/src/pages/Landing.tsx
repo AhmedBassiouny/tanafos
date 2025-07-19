@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 export const Landing: React.FC = () => {
   const { user } = useAuth()

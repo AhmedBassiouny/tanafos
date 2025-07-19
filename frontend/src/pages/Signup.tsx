@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button, Input, Card } from '../components/ui'
 import { auth } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { validateEmail, validatePassword, validateUsername } from '../utils/validation'
 
 export const Signup: React.FC = () => {
@@ -60,8 +60,9 @@ export const Signup: React.FC = () => {
       localStorage.setItem('token', token)
       setUser(user)
       navigate('/dashboard')
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Something went wrong'
+    } catch (error: unknown) {
+      const errorResponse = error as { response?: { data?: { error?: string } } }
+      const message = errorResponse.response?.data?.error || 'Something went wrong'
       setErrors(prev => ({ ...prev, general: message }))
     } finally {
       setIsLoading(false)

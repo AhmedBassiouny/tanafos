@@ -44,13 +44,25 @@ router.get('/today', (req, res, next) => __awaiter(void 0, void 0, void 0, funct
                 loggedDate: today
             },
             include: {
-                task: true
+                task: {
+                    select: {
+                        id: true,
+                        name: true,
+                        unit: true
+                    }
+                }
+            },
+            orderBy: {
+                task: {
+                    displayOrder: 'asc'
+                }
             }
         });
         const formatted = todayProgress.map(log => ({
             id: log.id,
             taskId: log.taskId,
             taskName: log.task.name,
+            taskUnit: log.task.unit,
             value: log.value.toNumber(),
             pointsEarned: log.pointsEarned,
             loggedDate: log.loggedDate

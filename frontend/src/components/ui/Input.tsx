@@ -9,16 +9,20 @@ export const Input: React.FC<InputProps> = ({
   label,
   error,
   className = '',
+  id,
   ...props
 }) => {
+  const inputId = id || `input-${Math.random().toString(36).substring(2, 11)}`
+  
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-sm font-medium text-slate-700">
+        <label htmlFor={inputId} className="block text-sm font-medium text-slate-700">
           {label}
         </label>
       )}
       <input
+        id={inputId}
         className={`
           block w-full px-4 py-2.5 text-slate-900 placeholder-slate-400
           bg-white border rounded-xl transition-all duration-200

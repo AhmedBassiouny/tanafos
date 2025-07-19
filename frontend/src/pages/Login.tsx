@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Button, Input, Card } from '../components/ui'
 import { auth } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { validateEmail, validatePassword } from '../utils/validation'
 
 export const Login: React.FC = () => {
@@ -10,7 +10,7 @@ export const Login: React.FC = () => {
   const location = useLocation()
   const { setUser } = useAuth()
   
-  const from = (location.state as any)?.from?.pathname || '/dashboard'
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard'
   
   const [formData, setFormData] = useState({
     email: '',
@@ -60,8 +60,9 @@ export const Login: React.FC = () => {
       localStorage.setItem('token', token)
       setUser(user)
       navigate(from, { replace: true })
-    } catch (error: any) {
-      const message = error.response?.data?.error || 'Invalid email or password'
+    } catch (error: unknown) {
+      const errorResponse = error as { response?: { data?: { error?: string } } }
+      const message = errorResponse.response?.data?.error || 'Invalid email or password'
       setErrors(prev => ({ ...prev, general: message }))
     } finally {
       setIsLoading(false)

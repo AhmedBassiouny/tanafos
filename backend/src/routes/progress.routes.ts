@@ -39,7 +39,18 @@ router.get('/today', async (req: any, res: Response, next: NextFunction) => {
         loggedDate: today
       },
       include: {
-        task: true
+        task: {
+          select: {
+            id: true,
+            name: true,
+            unit: true
+          }
+        }
+      },
+      orderBy: {
+        task: {
+          displayOrder: 'asc'
+        }
       }
     })
 
@@ -47,6 +58,7 @@ router.get('/today', async (req: any, res: Response, next: NextFunction) => {
       id: log.id,
       taskId: log.taskId,
       taskName: log.task.name,
+      taskUnit: log.task.unit,
       value: log.value.toNumber(),
       pointsEarned: log.pointsEarned,
       loggedDate: log.loggedDate

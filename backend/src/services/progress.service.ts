@@ -2,6 +2,7 @@ import { prisma } from '../config/database'
 import { LogProgressInput } from '../types/progress'
 import { AppError } from '../middleware/errorHandler'
 import { Decimal } from '@prisma/client/runtime/library'
+import { LeaderboardService } from './leaderboard.service'
 
 export class ProgressService {
   static async logProgress(userId: number, data: LogProgressInput) {
@@ -104,6 +105,9 @@ export class ProgressService {
 
       return progressLog
     })
+
+    // Invalidate leaderboard cache since scores were updated
+    LeaderboardService.invalidateCache(data.taskId)
 
     return {
       id: result.id,

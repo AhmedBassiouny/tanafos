@@ -1,6 +1,6 @@
 import React from 'react'
 import type { LeaderboardEntry } from '../types'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]

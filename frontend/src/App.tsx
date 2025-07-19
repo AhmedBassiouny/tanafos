@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Landing, Dashboard, Leaderboard, Login, Signup } from './pages'
-import { useAuth } from './contexts/AuthContext'
+import { useAuth } from './hooks/useAuth'
 import { Loading } from './components/ui'
 
 // Protected route wrapper with auth context

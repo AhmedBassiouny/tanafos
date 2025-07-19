@@ -36,6 +36,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         
         <button
           onClick={() => onLogProgress(task)}
+          aria-label="Log progress"
           className="ml-4 w-12 h-12 bg-accent-50 text-accent-600 rounded-xl flex items-center justify-center hover:bg-accent-100 transition-colors group-hover:scale-110"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

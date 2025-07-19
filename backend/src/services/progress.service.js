@@ -13,6 +13,7 @@ exports.ProgressService = void 0;
 const database_1 = require("../config/database");
 const errorHandler_1 = require("../middleware/errorHandler");
 const library_1 = require("@prisma/client/runtime/library");
+const leaderboard_service_1 = require("./leaderboard.service");
 class ProgressService {
     static logProgress(userId, data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -106,6 +107,8 @@ class ProgressService {
                 }
                 return progressLog;
             }));
+            // Invalidate leaderboard cache since scores were updated
+            leaderboard_service_1.LeaderboardService.invalidateCache(data.taskId);
             return {
                 id: result.id,
                 taskId: result.taskId,

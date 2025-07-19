@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { useAuth } from '../hooks/useAuth'
 import { 
   leaderboard as leaderboardApi,
   tasks as tasksApi,
@@ -61,7 +61,6 @@ export const Leaderboard: React.FC = () => {
   }
 
   // Fetch data on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     void fetchData()
   }, [])
