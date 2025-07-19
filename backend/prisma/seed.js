@@ -88,8 +88,8 @@ function main() {
             }),
             prisma.user.create({
                 data: {
-                    username: 'sarah_jones',
-                    email: 'sarah@example.com',
+                    username: 'ahmed',
+                    email: 'ahmed@example.com',
                     passwordHash,
                 },
             }),

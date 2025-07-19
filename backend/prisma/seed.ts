@@ -10,42 +10,50 @@ async function main() {
   const tasks = await Promise.all([
     prisma.task.create({
       data: {
-        name: 'Exercise',
-        unit: 'minutes',
-        pointsPerUnit: 1,
+        name: 'Quran Reading',
+        unit: 'pages',
+        pointsPerUnit: 3,
         displayOrder: 1,
       },
     }),
     prisma.task.create({
       data: {
-        name: 'Reading',
-        unit: 'pages',
-        pointsPerUnit: 2,
+        name: 'Prayer on Time',
+        unit: 'prayers',
+        pointsPerUnit: 5,
         displayOrder: 2,
       },
     }),
     prisma.task.create({
       data: {
-        name: 'Water',
-        unit: 'glasses',
-        pointsPerUnit: 1,
+        name: 'Azkar & Dhikr',
+        unit: 'per 10 mins',
+        pointsPerUnit: 2,
         displayOrder: 3,
       },
     }),
     prisma.task.create({
       data: {
-        name: 'Meditation',
-        unit: 'minutes',
-        pointsPerUnit: 2,
+        name: 'Helping Others',
+        unit: 'acts',
+        pointsPerUnit: 4,
         displayOrder: 4,
       },
     }),
     prisma.task.create({
       data: {
-        name: 'Sleep',
-        unit: 'hours',
-        pointsPerUnit: 3,
+        name: 'Charity (Sadaqah)',
+        unit: '% of monthly income',
+        pointsPerUnit: 10,
         displayOrder: 5,
+      },
+    }),
+    prisma.task.create({
+      data: {
+        name: 'Seeking Knowledge',
+        unit: 'minutes',
+        pointsPerUnit: 2,
+        displayOrder: 6,
       },
     }),
   ])
@@ -79,8 +87,8 @@ async function main() {
     }),
     prisma.user.create({
       data: {
-        username: 'sarah_jones',
-        email: 'sarah@example.com',
+        username: 'ahmed',
+        email: 'ahmed@example.com',
         passwordHash,
       },
     }),
@@ -111,20 +119,23 @@ async function main() {
 
         let value = 0
         switch (task.name) {
-          case 'Exercise':
-            value = Math.floor(Math.random() * 90) + 15 // 15-105 minutes
+          case 'Quran Reading':
+            value = Math.floor(Math.random() * 10) + 1 // 1-11 pages
             break
-          case 'Reading':
-            value = Math.floor(Math.random() * 30) + 5 // 5-35 pages
+          case 'Prayer on Time':
+            value = Math.floor(Math.random() * 5) + 1 // 1-5 prayers
             break
-          case 'Water':
-            value = Math.floor(Math.random() * 6) + 6 // 6-12 glasses
+          case 'Azkar & Dhikr':
+            value = Math.floor(Math.random() * 12) + 1 // 1-12 sessions of 10 mins
             break
-          case 'Meditation':
-            value = Math.floor(Math.random() * 25) + 5 // 5-30 minutes
+          case 'Helping Others':
+            value = Math.floor(Math.random() * 3) + 1 // 1-3 acts
             break
-          case 'Sleep':
-            value = Math.floor(Math.random() * 3) + 6 // 6-9 hours
+          case 'Charity (Sadaqah)':
+            value = Math.floor(Math.random() * 8) + 1 // 1-8% of monthly income
+            break
+          case 'Seeking Knowledge':
+            value = Math.floor(Math.random() * 60) + 15 // 15-75 minutes
             break
         }
 
