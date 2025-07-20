@@ -53,10 +53,31 @@ cd frontend
 npm install 2>&1 | filter_npm_warnings
 cd ..
 
-print_status "🧪 Running Backend Tests..." $YELLOW
+print_status "🔧 Setting up test database..." $YELLOW
 echo "================================"
 
 cd backend
+
+# Run database migrations for tests
+echo "Running database migrations..."
+if npx prisma migrate deploy 2>&1 | filter_npm_warnings; then
+    print_status "✅ Database migrations completed!" $GREEN
+else
+    print_status "❌ Database migrations failed!" $RED
+    cd ..
+    exit 1
+fi
+
+# Run database seed (optional, may fail if no seed file)
+echo "Running database seed..."
+if npx prisma db seed 2>&1 | filter_npm_warnings; then
+    print_status "✅ Database seed completed!" $GREEN
+else
+    print_status "⚠️  Database seed failed or not available (this is optional)" $YELLOW
+fi
+
+print_status "🧪 Running Backend Tests..." $YELLOW
+echo "================================"
 if npm test 2>&1 | filter_npm_warnings; then
     print_status "✅ Backend tests passed!" $GREEN
     BACKEND_TESTS_PASSED=true
