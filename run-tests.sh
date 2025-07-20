@@ -60,7 +60,8 @@ cd backend
 
 # Run database migrations for tests
 echo "Running database migrations..."
-if npx prisma migrate deploy 2>&1 | filter_npm_warnings; then
+npx prisma migrate deploy 2>&1 | filter_npm_warnings
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
     print_status "✅ Database migrations completed!" $GREEN
 else
     print_status "❌ Database migrations failed!" $RED
@@ -70,7 +71,8 @@ fi
 
 # Run database seed (optional, may fail if no seed file)
 echo "Running database seed..."
-if npx prisma db seed 2>&1 | filter_npm_warnings; then
+npx prisma db seed 2>&1 | filter_npm_warnings
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
     print_status "✅ Database seed completed!" $GREEN
 else
     print_status "⚠️  Database seed failed or not available (this is optional)" $YELLOW
@@ -78,7 +80,8 @@ fi
 
 print_status "🧪 Running Backend Tests..." $YELLOW
 echo "================================"
-if npm test 2>&1 | filter_npm_warnings; then
+npm test 2>&1 | filter_npm_warnings
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
     print_status "✅ Backend tests passed!" $GREEN
     BACKEND_TESTS_PASSED=true
 else
