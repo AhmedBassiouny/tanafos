@@ -5,6 +5,14 @@
 
 set -e
 
+# Suppress npm engine warnings
+export NPM_CONFIG_ENGINE_STRICT=false
+
+# Function to filter out npm engine warnings
+filter_npm_warnings() {
+    grep -v "npm warn EBADENGINE"
+}
+
 echo "🧪 Running Tanafos Test Suite"
 echo "================================"
 
@@ -36,20 +44,20 @@ print_status "🔧 Installing dependencies..." $YELLOW
 # Install backend dependencies
 echo "Installing backend dependencies..."
 cd backend
-npm install
+npm install 2>&1 | filter_npm_warnings
 cd ..
 
 # Install frontend dependencies
 echo "Installing frontend dependencies..."
 cd frontend
-npm install
+npm install 2>&1 | filter_npm_warnings
 cd ..
 
 print_status "🧪 Running Backend Tests..." $YELLOW
 echo "================================"
 
 cd backend
-if npm test; then
+if npm test 2>&1 | filter_npm_warnings; then
     print_status "✅ Backend tests passed!" $GREEN
     BACKEND_TESTS_PASSED=true
 else
