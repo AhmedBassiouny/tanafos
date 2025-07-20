@@ -97,7 +97,7 @@ return (
         <Input
           label={`How many ${task.unit}?`}
           type="number"
-          step="0.1"
+          step="1"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder="0"
