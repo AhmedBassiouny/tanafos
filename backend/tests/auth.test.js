@@ -100,7 +100,7 @@ describe('Authentication API', () => {
                 .post('/api/auth/signup')
                 .send(userData)
                 .expect(400);
-            expect(response.body.error).toContain('password');
+            expect(response.body.error).toContain('Password must be at least 6 characters long');
         }));
     });
     describe('POST /api/auth/login', () => {

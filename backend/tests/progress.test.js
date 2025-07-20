@@ -169,7 +169,7 @@ describe('Progress API', () => {
                 .set(authHeaders)
                 .send(progressData)
                 .expect(400);
-            expect(response.body.error).toContain('positive');
+            expect(response.body.error).toContain('greater than 0');
         }));
     });
     describe('GET /api/progress/today', () => {

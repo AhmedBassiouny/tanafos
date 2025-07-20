@@ -66,10 +66,21 @@ export const createAuthHeaders = (token: string) => ({
 
 export const cleanDatabase = async () => {
   // Delete in order to respect foreign key constraints
-  await prisma.progressLog.deleteMany()
-  await prisma.userScore.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.task.deleteMany()
+  try {
+    await prisma.progressLog.deleteMany()
+    await prisma.userScore.deleteMany()
+    await prisma.user.deleteMany()
+    await prisma.task.deleteMany()
+  } catch (error) {
+    console.warn('Warning: Could not clean all tables. Some may not exist yet:', error)
+    // Try to clean tables that do exist
+    try {
+      await prisma.user.deleteMany()
+    } catch {}
+    try {
+      await prisma.task.deleteMany()
+    } catch {}
+  }
   
   // Clear cache to ensure fresh data
   LeaderboardService.clearAllCache()

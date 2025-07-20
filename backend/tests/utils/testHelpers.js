@@ -62,15 +62,24 @@ const createAuthHeaders = (token) => ({
 exports.createAuthHeaders = createAuthHeaders;
 const cleanDatabase = () => __awaiter(void 0, void 0, void 0, function* () {
     // Delete in order to respect foreign key constraints
-    yield setup_1.prisma.progressLog.deleteMany();
-    yield setup_1.prisma.userScore.deleteMany();
-    yield setup_1.prisma.user.deleteMany();
-    yield setup_1.prisma.task.deleteMany();
-    // Reset auto-increment sequences to avoid ID conflicts
-    yield setup_1.prisma.$executeRaw `TRUNCATE TABLE progress_logs RESTART IDENTITY CASCADE`;
-    yield setup_1.prisma.$executeRaw `TRUNCATE TABLE user_scores RESTART IDENTITY CASCADE`;
-    yield setup_1.prisma.$executeRaw `TRUNCATE TABLE users RESTART IDENTITY CASCADE`;
-    yield setup_1.prisma.$executeRaw `TRUNCATE TABLE tasks RESTART IDENTITY CASCADE`;
+    try {
+        yield setup_1.prisma.progressLog.deleteMany();
+        yield setup_1.prisma.userScore.deleteMany();
+        yield setup_1.prisma.user.deleteMany();
+        yield setup_1.prisma.task.deleteMany();
+    }
+    catch (error) {
+        console.warn('Warning: Could not clean all tables. Some may not exist yet:', error);
+        // Try to clean tables that do exist
+        try {
+            yield setup_1.prisma.user.deleteMany();
+        }
+        catch (_a) { }
+        try {
+            yield setup_1.prisma.task.deleteMany();
+        }
+        catch (_b) { }
+    }
     // Clear cache to ensure fresh data
     leaderboard_service_1.LeaderboardService.clearAllCache();
 });
