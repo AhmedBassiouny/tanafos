@@ -2,9 +2,9 @@
 
 **Document Version**: 1.0  
 **Date**: 2025-07-20  
-**Author**: Claude AI  
-**Reviewers**: Engineering Team  
-**Status**: Draft  
+**Author**: Ahmed Bassiouny  
+**Reviewers**: Ahmed Bassiouny  
+**Status**: Approved  
 
 ## Table of Contents
 
@@ -55,11 +55,6 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 3. **Cultural Misalignment**: Targets don't reflect traditional Islamic practice recommendations
 4. **Progress Context**: Raw numbers lack meaning without goal context
 
-### Business Impact
-- 23% of users show irregular engagement patterns
-- Average session duration could increase with clear targets
-- User retention opportunity through gamified goal achievement
-
 ---
 
 ## Goals and Success Metrics
@@ -69,12 +64,6 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 2. **Cultural Authenticity**: Align goals with traditional Islamic recommendations (5 daily prayers, morning/evening azkar)
 3. **Progressive Achievement**: Visual progress tracking toward daily goals
 4. **Flexible Configuration**: Admin ability to adjust goals per task
-
-### Success Metrics
-- **User Engagement**: 15% increase in daily active users
-- **Goal Completion Rate**: 60% of users achieve at least 3 daily goals
-- **Session Duration**: 20% increase in average session time
-- **Retention**: 10% improvement in 7-day user retention
 
 ### Leading Indicators
 - Goal completion rate per task type
@@ -92,13 +81,12 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 - **FR-1.1**: Each task must have a configurable daily goal target
 - **FR-1.2**: Goals must support different target types (exact count, minimum threshold)
 - **FR-1.3**: Default goals must align with Islamic practice recommendations
-- **FR-1.4**: Goal configuration via Prisma Studio (admin interface for future enhancement)
 
 #### FR-2: Progress Tracking
 - **FR-2.1**: Real-time calculation of daily goal progress
 - **FR-2.2**: Goal completion status (incomplete, in-progress, completed, exceeded)
 - **FR-2.3**: Historical goal achievement tracking
-- **FR-2.4**: Daily goal reset at 12:00 AM in user's local timezone
+- **FR-2.4**: Daily goal reset at Islamic day boundary (Maghrib time)
 
 #### FR-3: Dashboard Integration
 - **FR-3.1**: Visual progress indicators for each task goal
@@ -111,12 +99,6 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 - **FR-4.2**: Task-specific goal achievement rates
 - **FR-4.3**: Daily/weekly goal patterns
 - **FR-4.4**: Community goal achievement insights
-
-#### FR-5: Timezone Management
-- **FR-5.1**: User timezone detection and storage
-- **FR-5.2**: Timezone-aware goal date calculations
-- **FR-5.3**: Proper handling of timezone changes (travel, DST)
-- **FR-5.4**: Server-side timezone conversion for data consistency
 
 ### Non-Functional Requirements
 
@@ -167,14 +149,12 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 ### Core Components
 
 #### 1. Goal Service (`backend/src/services/goal.service.ts`)
-- **Responsibilities**: Goal CRUD operations, progress calculations, achievement detection, timezone handling
+- **Responsibilities**: Goal CRUD operations, progress calculations, achievement detection
 - **Key Methods**:
-  - `calculateDailyProgress(userId: number, date: Date, timezone: string): DailyGoalProgress[]`
+  - `calculateDailyProgress(userId: number, date: Date): DailyGoalProgress[]`
   - `checkGoalCompletion(userId: number, taskId: number, date: Date): boolean`
   - `getDailyGoalsForUser(userId: number): DailyGoalWithProgress[]`
   - `updateTaskGoal(taskId: number, goalData: UpdateGoalInput): DailyGoal`
-  - `resetGoalsForTimezone(timezone: string): Promise<void>`
-  - `getUserLocalDate(userId: number): Date`
 
 #### 2. Progress Enhancement (`backend/src/services/progress.service.ts`)
 - **New Methods**:
@@ -200,20 +180,13 @@ The Daily Goals feature introduces a structured goal-setting system to the Tanaf
 7. Achievement celebration triggered if goal completed
 ```
 
-#### Daily Goal Reset Flow (Timezone-Aware)
+#### Daily Goal Reset Flow
 ```
-1. Scheduled job runs every hour checking for users whose local time is 12:00 AM
-2. For each timezone reaching midnight:
-   a. Archive DailyGoalProgress records to DailyGoalHistory for that timezone's users
-   b. Create new DailyGoalProgress records for next day for those users
-   c. Invalidate cache for affected users' goal progress data
-3. Users see fresh goals on next login (immediate for active users)
-4. Batch processing ensures efficient handling of global user base
-
-Example: 
-- 12:00 AM Dubai (UTC+4): Reset goals for Middle East users
-- 12:00 AM London (UTC+0): Reset goals for UK users  
-- 12:00 AM Turkey (UTC+3): Reset goals for Turkish users
+1. Scheduled job runs at Maghrib time (Islamic day boundary)
+2. DailyGoalProgress records archived to DailyGoalHistory
+3. New DailyGoalProgress records created for next day
+4. Cache invalidated for goal progress data
+5. Users see fresh goals on next login
 ```
 
 ---
@@ -236,8 +209,6 @@ model DailyGoal {
   // Relations
   task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
   
-  // Constraints
-  @@check(targetValue >= 0.01 AND targetValue <= 999.99, name: "valid_target_value")
   @@map("daily_goals")
 }
 
@@ -322,7 +293,6 @@ model Task {
 ```sql
 model User {
   // ... existing fields ...
-  timezone            String   @default("UTC") @db.VarChar(50)  // User's timezone (e.g., "Asia/Dubai", "Europe/London")
   
   // New relations
   dailyGoalProgress   DailyGoalProgress[]
@@ -332,24 +302,7 @@ model User {
 
 ### Migration Strategy
 
-#### Migration 001: Add User Timezone Support
-```sql
--- Add timezone column to users table with UTC default
-ALTER TABLE "users" ADD COLUMN "timezone" VARCHAR(50) DEFAULT 'UTC';
-
--- All existing users will use UTC initially
--- Users will be prompted to set their timezone on next login via frontend
--- This ensures user control and accuracy of timezone data
-
--- Add index for timezone queries
-CREATE INDEX "users_timezone_idx" ON "users"("timezone");
-
--- Add constraint to ensure only valid IANA timezone identifiers
-ALTER TABLE "users" ADD CONSTRAINT "valid_timezone" 
-  CHECK ("timezone" ~ '^[A-Za-z]+\/[A-Za-z_]+$' OR "timezone" = 'UTC');
-```
-
-#### Migration 002: Create Daily Goals Tables
+#### Migration 001: Create Daily Goals Tables
 ```sql
 -- Create enums
 CREATE TYPE "GoalType" AS ENUM ('EXACT', 'MINIMUM', 'MAXIMUM');
@@ -423,7 +376,7 @@ CREATE INDEX "daily_goal_history_goal_date_status_idx"
   ON "daily_goal_history"("goal_date", "status");
 ```
 
-#### Migration 003: Seed Default Goals
+#### Migration 002: Seed Default Goals
 ```sql
 -- Insert default daily goals based on Islamic practices
 INSERT INTO "daily_goals" ("task_id", "target_value", "target_type") VALUES
@@ -434,14 +387,12 @@ INSERT INTO "daily_goals" ("task_id", "target_value", "target_type") VALUES
   (5, 1.0, 'MINIMUM'),   -- Charity: 1+ act of giving
   (6, 30.0, 'MINIMUM');  -- Seeking Knowledge: 30+ minutes
 
--- Create initial daily goal progress for all existing users (timezone-aware)
--- This function will be called daily for each timezone
+-- Create initial daily goal progress for all existing users
 INSERT INTO "daily_goal_progress" ("user_id", "task_id", "goal_date", "target_value", "current_value", "status")
 SELECT 
   u.id as user_id,
   dg.task_id,
-  -- Use user's timezone to determine their "current date"
-  DATE(NOW() AT TIME ZONE u.timezone) as goal_date,
+  CURRENT_DATE as goal_date,
   dg.target_value,
   COALESCE(pl.value, 0) as current_value,
   CASE 
@@ -453,7 +404,7 @@ FROM users u
 CROSS JOIN daily_goals dg
 LEFT JOIN progress_logs pl ON pl.user_id = u.id 
   AND pl.task_id = dg.task_id 
-  AND pl.logged_date = DATE(NOW() AT TIME ZONE u.timezone)
+  AND pl.logged_date = CURRENT_DATE
 WHERE dg.is_active = true;
 ```
 
@@ -473,18 +424,15 @@ WHERE dg.is_active = true;
 GET /api/goals/daily
 Authorization: Bearer <jwt_token>
 Query Parameters:
-  ?date=2025-07-20  // Optional, defaults to today in user's timezone
-  ?timezone=Asia/Dubai  // Optional, overrides user's stored timezone
+  ?date=2025-07-20  // Optional, defaults to today
 ```
 
-**Success Response (200)**:
+**Response**:
 ```json
 {
   "success": true,
   "data": {
     "goalDate": "2025-07-20",
-    "userTimezone": "Asia/Dubai",
-    "localTime": "2025-07-20T15:30:00+04:00",
     "overallProgress": {
       "completed": 4,
       "total": 6,
@@ -500,7 +448,7 @@ Query Parameters:
         "targetType": "EXACT",
         "status": "COMPLETED",
         "completionRate": 100.0,
-        "completedAt": "2025-07-20T17:30:00+04:00",
+        "completedAt": "2025-07-20T17:30:00Z",
         "unit": "prayers"
       },
       {
@@ -516,64 +464,6 @@ Query Parameters:
         "unit": "pages"
       }
     ]
-  }
-}
-```
-
-**Error Responses**:
-
-**400 Bad Request** - Invalid parameters:
-```json
-{
-  "success": false,
-  "error": {
-    "code": "INVALID_TIMEZONE",
-    "message": "Invalid timezone format. Must be a valid IANA timezone identifier.",
-    "details": "Received: 'Invalid/Timezone', Expected format: 'Asia/Dubai'"
-  }
-}
-```
-
-**401 Unauthorized** - Authentication required:
-```json
-{
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required. Please provide a valid JWT token."
-  }
-}
-```
-
-**404 Not Found** - No goals configured:
-```json
-{
-  "success": false,
-  "error": {
-    "code": "NO_GOALS_CONFIGURED",
-    "message": "No daily goals are configured for this user.",
-    "data": {
-      "goalDate": "2025-07-20",
-      "userTimezone": "Asia/Dubai",
-      "overallProgress": {
-        "completed": 0,
-        "total": 0,
-        "completionRate": 0
-      },
-      "goals": []
-    }
-  }
-}
-```
-
-**500 Internal Server Error** - System error:
-```json
-{
-  "success": false,
-  "error": {
-    "code": "GOAL_CALCULATION_ERROR",
-    "message": "Unable to calculate goal progress at this time. Please try again later.",
-    "requestId": "req_abc123"
   }
 }
 ```
@@ -623,8 +513,37 @@ Query Parameters:
 }
 ```
 
-##### Goal Configuration
-**Note**: Goal configuration handled via Prisma Studio for initial release. Future admin API can be added when needed.
+##### POST /api/goals/admin/configure
+**Purpose**: Configure daily goals for tasks (Admin only)
+
+**Request**:
+```http
+POST /api/goals/admin/configure
+Authorization: Bearer <admin_jwt_token>
+Content-Type: application/json
+
+{
+  "taskId": 2,
+  "targetValue": 5.0,
+  "targetType": "EXACT",
+  "isActive": true
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "taskId": 2,
+    "targetValue": 5.0,
+    "targetType": "EXACT",
+    "isActive": true,
+    "updatedAt": "2025-07-20T12:00:00Z"
+  }
+}
+```
 
 ##### GET /api/goals/analytics
 **Purpose**: Goal completion analytics for community insights
@@ -672,36 +591,8 @@ Query Parameters:
 
 ### Modified Endpoints
 
-##### PUT /api/user/timezone
-**Purpose**: Update user's timezone setting
-
-**Request**:
-```http
-PUT /api/user/timezone
-Authorization: Bearer <jwt_token>
-Content-Type: application/json
-
-{
-  "timezone": "Europe/London"
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "userId": 1,
-    "timezone": "Europe/London",
-    "updatedAt": "2025-07-20T12:00:00Z",
-    "goalResetTime": "00:00:00 GMT",
-    "nextGoalReset": "2025-07-21T00:00:00Z"
-  }
-}
-```
-
 ##### POST /api/progress (Enhanced)
-**Enhancement**: Automatically update goal progress when logging activity (timezone-aware)
+**Enhancement**: Automatically update goal progress when logging activity
 
 **New Response Fields**:
 ```json
@@ -711,8 +602,6 @@ Content-Type: application/json
     // ... existing progress data ...
     "goalProgress": {
       "goalId": 1,
-      "goalDate": "2025-07-20",
-      "userTimezone": "Asia/Dubai",
       "previousStatus": "IN_PROGRESS",
       "newStatus": "COMPLETED",
       "completionRate": 100.0,
@@ -729,75 +618,7 @@ Content-Type: application/json
 
 ### New Components
 
-#### 1. TimezoneSelector Component
-**File**: `frontend/src/components/settings/TimezoneSelector.tsx`
-
-**Purpose**: Allow users to select and update their timezone
-
-**Props**:
-```typescript
-interface TimezoneSelectorProps {
-  currentTimezone: string
-  onTimezoneChange: (timezone: string) => void
-  showDetectedTimezone?: boolean
-}
-```
-
-**Design**:
-```tsx
-<div className="timezone-selector">
-  <label htmlFor="timezone-select">Your Timezone</label>
-  
-  {showDetectedTimezone && (
-    <div className="detected-timezone">
-      <InfoIcon className="w-4 h-4" />
-      <span>Detected: {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
-      <Button 
-        variant="link" 
-        onClick={() => onTimezoneChange(Intl.DateTimeFormat().resolvedOptions().timeZone)}
-      >
-        Use Detected
-      </Button>
-    </div>
-  )}
-  
-  <Select
-    id="timezone-select"
-    value={currentTimezone}
-    onChange={onTimezoneChange}
-  >
-    <SelectGroup label="Popular Islamic Countries">
-      <SelectItem value="Asia/Dubai">Dubai (UAE) - GMT+4</SelectItem>
-      <SelectItem value="Asia/Riyadh">Riyadh (Saudi Arabia) - GMT+3</SelectItem>
-      <SelectItem value="Europe/Istanbul">Istanbul (Turkey) - GMT+3</SelectItem>
-      <SelectItem value="Asia/Karachi">Karachi (Pakistan) - GMT+5</SelectItem>
-      <SelectItem value="Asia/Jakarta">Jakarta (Indonesia) - GMT+7</SelectItem>
-    </SelectGroup>
-    
-    <SelectGroup label="Europe">
-      <SelectItem value="Europe/London">London (UK) - GMT+0</SelectItem>
-      <SelectItem value="Europe/Paris">Paris (France) - GMT+1</SelectItem>
-      <SelectItem value="Europe/Berlin">Berlin (Germany) - GMT+1</SelectItem>
-    </SelectGroup>
-    
-    <SelectGroup label="Americas">
-      <SelectItem value="America/New_York">New York (US) - GMT-5</SelectItem>
-      <SelectItem value="America/Los_Angeles">Los Angeles (US) - GMT-8</SelectItem>
-      <SelectItem value="America/Toronto">Toronto (Canada) - GMT-5</SelectItem>
-    </SelectGroup>
-  </Select>
-  
-  <div className="timezone-info">
-    <ClockIcon className="w-4 h-4" />
-    <span>Goals reset at 12:00 AM in your timezone</span>
-    <span className="next-reset">
-      Next reset: {formatNextReset(currentTimezone)}
-    </span>
-  </div>
-</div>
-```
-
-#### 2. GoalProgressBar Component
+#### 1. GoalProgressBar Component
 **File**: `frontend/src/components/goals/GoalProgressBar.tsx`
 
 **Purpose**: Visual progress indicator for individual task goals
@@ -957,13 +778,11 @@ const fetchDashboardData = async () => {
     userApi.getStats(),
     progressApi.getToday(),
     leaderboardApi.getOverall(),
-    goalsApi.getDailyGoals() // New API call - automatically uses user's timezone
+    goalsApi.getDailyGoals() // New API call
   ])
   
   setDailyGoals(goalsRes.data.goals)
   setGoalsSummary(goalsRes.data.overallProgress)
-  setUserTimezone(goalsRes.data.userTimezone)
-  setLocalTime(goalsRes.data.localTime)
 }
 ```
 
@@ -1103,8 +922,6 @@ export interface DailyGoalWithProgress extends DailyGoalProgress {
 
 export interface DailyGoalsSummary {
   goalDate: string
-  userTimezone: string
-  localTime: string
   completed: number
   total: number
   completionRate: number
@@ -1144,11 +961,10 @@ export interface GoalAnalytics {
 ```typescript
 describe('GoalService', () => {
   describe('calculateDailyProgress', () => {
-    it('should calculate correct progress for user goals with timezone', async () => {
+    it('should calculate correct progress for user goals', async () => {
       // Arrange
       const userId = 1
       const goalDate = new Date('2025-07-20')
-      const userTimezone = 'Asia/Dubai'
       const mockGoals = [
         { taskId: 1, targetValue: 5, targetType: 'EXACT' },
         { taskId: 2, targetValue: 2, targetType: 'MINIMUM' }
@@ -1159,7 +975,7 @@ describe('GoalService', () => {
       ]
       
       // Act
-      const result = await GoalService.calculateDailyProgress(userId, goalDate, userTimezone)
+      const result = await GoalService.calculateDailyProgress(userId, goalDate)
       
       // Assert
       expect(result).toHaveLength(2)
@@ -1177,20 +993,6 @@ describe('GoalService', () => {
         status: 'COMPLETED',
         completionRate: 100
       })
-    })
-    
-    it('should handle different timezones correctly', async () => {
-      // Test Dubai user at 2 AM (should be current day)
-      const dubaiResult = await GoalService.calculateDailyProgress(1, new Date('2025-07-20T02:00:00Z'), 'Asia/Dubai')
-      
-      // Test London user at same UTC time (should be different local day)
-      const londonResult = await GoalService.calculateDailyProgress(2, new Date('2025-07-20T02:00:00Z'), 'Europe/London')
-      
-      // Dubai is UTC+4, so 2 AM UTC = 6 AM Dubai (same day)
-      // London is UTC+0, so 2 AM UTC = 2 AM London (same day) 
-      // But goal dates should be calculated in respective timezones
-      expect(dubaiResult[0].goalDate).toBe('2025-07-20')
-      expect(londonResult[0].goalDate).toBe('2025-07-20')
     })
     
     it('should handle goal completion status correctly', async () => {
@@ -1273,28 +1075,16 @@ describe('Goals API', () => {
       expect(response.body.data.goals).toBeInstanceOf(Array)
       expect(response.body.data.overallProgress).toHaveProperty('completed')
       expect(response.body.data.overallProgress).toHaveProperty('total')
-      expect(response.body.data).toHaveProperty('userTimezone')
-      expect(response.body.data).toHaveProperty('localTime')
     })
     
-    it('should handle timezone parameter', async () => {
-      const response = await request(app)
-        .get('/api/goals/daily?timezone=Europe/London')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200)
-      
-      expect(response.body.data.userTimezone).toBe('Europe/London')
-    })
-    
-    it('should filter by date in user timezone', async () => {
+    it('should filter by date when provided', async () => {
       const testDate = '2025-07-19'
       const response = await request(app)
-        .get(`/api/goals/daily?date=${testDate}&timezone=Asia/Dubai`)
+        .get(`/api/goals/daily?date=${testDate}`)
         .set('Authorization', `Bearer ${validToken}`)
         .expect(200)
       
       expect(response.body.data.goalDate).toBe(testDate)
-      expect(response.body.data.userTimezone).toBe('Asia/Dubai')
     })
     
     it('should require authentication', async () => {
@@ -1304,28 +1094,32 @@ describe('Goals API', () => {
     })
   })
   
-  describe('PUT /api/user/timezone', () => {
-    it('should update user timezone', async () => {
+  describe('POST /api/goals/admin/configure', () => {
+    it('should allow admin to configure task goals', async () => {
+      const goalData = {
+        taskId: 1,
+        targetValue: 3.0,
+        targetType: 'MINIMUM',
+        isActive: true
+      }
+      
       const response = await request(app)
-        .put('/api/user/timezone')
-        .set('Authorization', `Bearer ${validToken}`)
-        .send({ timezone: 'Europe/London' })
+        .post('/api/goals/admin/configure')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send(goalData)
         .expect(200)
       
-      expect(response.body.data.timezone).toBe('Europe/London')
-      expect(response.body.data).toHaveProperty('nextGoalReset')
+      expect(response.body.data).toMatchObject(goalData)
     })
     
-    it('should validate timezone format', async () => {
+    it('should reject non-admin users', async () => {
       await request(app)
-        .put('/api/user/timezone')
-        .set('Authorization', `Bearer ${validToken}`)
-        .send({ timezone: 'Invalid/Timezone' })
-        .expect(400)
+        .post('/api/goals/admin/configure')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({})
+        .expect(403)
     })
   })
-  
-  // Note: Goal configuration via Prisma Studio - no API tests needed initially
 })
 ```
 
@@ -1447,272 +1241,118 @@ describe('Daily Goals E2E', () => {
 
 ## Implementation Plan
 
-### Phase 1: Foundation & Infrastructure (Week 1-2)
+### Phase 1: Foundation (Week 1-2)
 **Duration**: 2 weeks  
 **Priority**: P0 (Blocking)
 
-#### Sprint 1.1: Database, Backend Core & Infrastructure (Week 1) ✅ COMPLETED
-- [x] **Database Migrations**: User timezone support with IANA validation constraints
-  - ✅ Added timezone column to users table with UTC default
-  - ✅ Created DailyGoal, DailyGoalProgress, DailyGoalHistory models
-  - ✅ Added proper foreign key constraints and indexes
-  - ✅ Migration: `20250721011835_add_daily_goals_system`
-- [x] **Goal Schema Creation**: DailyGoal, DailyGoalProgress, DailyGoalHistory models with proper constraints
-  - ✅ GoalType enum (EXACT, MINIMUM, MAXIMUM)
-  - ✅ GoalStatus enum (NOT_STARTED, IN_PROGRESS, COMPLETED, EXCEEDED)
-  - ✅ Proper decimal precision for goal values and completion rates
-  - ✅ Unique constraints and performance indexes implemented
-- [x] **Seed Data**: Default Islamic practice goals (5 prayers, 2 azkar, etc.)
-  - ✅ Quran Reading: 2+ pages daily (MINIMUM)
-  - ✅ Prayer on Time: exactly 5 prayers (EXACT)
-  - ✅ Azkar & Dhikr: 2+ sessions (MINIMUM)
-  - ✅ Helping Others: 1+ act (MINIMUM)
-  - ✅ Charity: 1+ act (MINIMUM)
-  - ✅ Seeking Knowledge: 30+ minutes (MINIMUM)
-- [ ] **Redis Setup**: Caching infrastructure for goal data (Deferred to Phase 4)
-- [x] **Goal Service**: Core calculation logic with timezone support
-  - [x] calculateDailyProgress() with timezone handling
-  - [x] checkGoalCompletion() for real-time updates
-  - [x] getUserLocalDate() for timezone conversion
-  - [x] updateUserTimezone() for timezone management
-  - [x] getGoalHistory() for historical data analysis
-  - [x] Support for all goal types with proper completion rate calculation
-- [ ] **Scheduled Jobs**: Hourly timezone-aware goal reset infrastructure (Deferred to Phase 2)
-- [x] **Timezone API**: User timezone management endpoints with validation
-  - [x] PUT /api/user/timezone - Update user timezone with IANA validation
-  - [x] GET /api/goals/daily - Timezone-aware daily goals endpoint
-  - [x] Proper timezone validation using Intl.DateTimeFormat
-- [x] **Database Optimization**: Indexes and query optimization for goal calculations
-  - [x] Composite indexes on (userId, goalDate) for progress queries
-  - [x] Status-based indexes for completion rate analytics
-  - [x] Task-specific indexes for goal filtering
-- [x] **Unit Tests**: Service tests including timezone edge cases, DST transitions
-  - [x] 28 service tests covering all GoalService methods
-  - [x] 28 API route tests covering all endpoints and error cases
-  - [x] Timezone edge case testing (invalid timezones, DST handling)
-  - [x] Goal type testing (EXACT, MINIMUM, MAXIMUM calculations)
-  - [x] Error handling and validation testing
-  - [x] **Total: 56 passing tests with 100% core functionality coverage**
-
-**Additional Completions**:
-- [x] **API Endpoints**: Complete REST API implementation
-  - [x] GET /api/goals/daily - Daily goals with progress
-  - [x] GET /api/goals/history - Historical goal data with pagination
-  - [x] GET /api/goals/analytics - Community insights (mock data ready)
-  - [x] PUT /api/goals/timezone - Timezone management
-- [x] **Enhanced Progress Service**: Integration with goal completion checking
-  - [x] logProgress() now triggers goal completion validation
-  - [x] Real-time goal status updates when logging activities
-- [x] **TypeScript Types**: Complete type definitions for goal system
-  - [x] DailyGoalWithProgress, DailyGoalsSummary interfaces
-  - [x] GoalCompletionResult, GoalAnalytics types
-  - [x] Proper enum handling for GoalType and GoalStatus
-
-**Acceptance Criteria**: ✅ ALL MET
-- ✅ All database migrations execute successfully with proper constraints
-- ✅ Goal calculations complete in <100ms across timezones (tested in unit tests)
-- ⏸️ Redis caching operational for goal data (Deferred to Phase 4 for performance optimization)
-- ⏸️ Scheduled jobs reset goals correctly at midnight per timezone (Deferred to Phase 2)
-- ✅ Timezone detection and storage working with IANA validation
-- ✅ 100% test coverage for core functionality including timezone edge cases (56 passing tests)
-
-**Sprint 1.1 Status**: ✅ **COMPLETED SUCCESSFULLY**
-**Completion Date**: July 21, 2025
-**Next Sprint**: Ready for Sprint 1.2 - Frontend Foundation & API Integration
-
-#### Sprint 1.2: Frontend Foundation & API Integration (Week 2)
-- [ ] **Timezone Components**: TimezoneSelector with auto-detection and popular Islamic countries
-- [ ] **Core Goal Components**: GoalProgressBar (sm/md/lg sizes), DailyGoalsSummary with circular progress
-- [ ] **Type Definitions**: Complete TypeScript interfaces for goals, progress, analytics
-- [ ] **API Client**: Goals API integration with comprehensive error handling
-- [ ] **Error Boundaries**: Graceful degradation for goal loading failures
-- [ ] **Component Tests**: Unit tests for all goal components
-- [ ] **Mobile Optimization**: Responsive design for goal components
+#### Sprint 1.1: Database and Backend Core (Week 1)
+- [ ] **Database Migration**: Create daily goals schema
+- [ ] **Seed Data**: Default Islamic practice goals
+- [ ] **Goal Service**: Core calculation logic
+- [ ] **API Endpoints**: Basic CRUD for goals
+- [ ] **Unit Tests**: Service and API tests
 
 **Acceptance Criteria**:
-- All goal components render correctly with timezone awareness
-- API integration handles all error states (400, 401, 404, 500)
-- Timezone selector functions with auto-detection
-- Components work seamlessly on mobile devices
-- Error boundaries prevent goal failures from crashing app
+- Daily goals can be created/read via API
+- Goal progress calculation works correctly
+- Database performance benchmarks met
+- 90%+ test coverage for new code
 
-### Phase 2: Dashboard Integration & Real-time Features (Week 3-4)
+#### Sprint 1.2: Frontend Foundation (Week 2)
+- [ ] **Component Library**: GoalProgressBar, DailyGoalsSummary
+- [ ] **API Integration**: Goals API client
+- [ ] **Type Definitions**: TypeScript interfaces
+- [ ] **Component Tests**: Unit tests for UI components
+
+**Acceptance Criteria**:
+- Goal components render correctly
+- API integration works without errors
+- Components handle loading/error states
+- Responsive design works on mobile
+
+### Phase 2: Dashboard Integration (Week 3-4)
 **Duration**: 2 weeks  
 **Priority**: P0 (Blocking)
 
-#### Sprint 2.1: Dashboard Enhancement & Progress Tracking (Week 3)
-- [ ] **Dashboard Integration**: Merge goals into main dashboard layout
-- [ ] **Enhanced Progress Service**: logProgressWithGoalCheck() for real-time updates
-- [ ] **TaskCard Enhancement**: Goal indicators, progress bars, status dots
-- [ ] **Real-time Updates**: Goal progress updates without page refresh
-- [ ] **Data Flow Optimization**: Efficient goal-progress synchronization
-- [ ] **Performance Monitoring**: Track dashboard load times with goals
-- [ ] **Integration Tests**: Dashboard-goals workflow testing
-- [ ] **Scheduled Jobs**: Hourly timezone-aware goal reset infrastructure (Deferred from Sprint 1.1)
-  - [ ] Implement timezone-aware goal reset at midnight for each timezone
-  - [ ] Archive completed goals to DailyGoalHistory table
-  - [ ] Create fresh DailyGoalProgress entries for new day
-  - [ ] Handle DST transitions and timezone edge cases
-  - [ ] Batch processing for global user base efficiency
+#### Sprint 2.1: Dashboard Enhancement (Week 3)
+- [ ] **Dashboard Updates**: Integrate goals into main dashboard
+- [ ] **Progress Tracking**: Real-time goal updates
+- [ ] **TaskCard Enhancement**: Add goal indicators
+- [ ] **Data Flow**: Connect progress logging to goal updates
 
 **Acceptance Criteria**:
-- Dashboard shows daily goals prominently with progress
-- Goal progress updates in real-time when logging activities
-- Task cards display goal status clearly
-- Dashboard load time remains <2 seconds with goals
-- Real-time updates work consistently across browsers
-- Scheduled jobs reset goals correctly at midnight per timezone (Deferred requirement)
-- Goal archival system maintains historical data integrity
+- Dashboard shows daily goals clearly
+- Goal progress updates in real-time
+- Task cards show goal status
+- Performance remains under 2s load time
 
-#### Sprint 2.2: User Experience & Celebrations (Week 4)
-- [ ] **Goal Completion Celebration**: Animated achievement component with Islamic messaging
-- [ ] **Visual Polish**: Smooth animations, micro-interactions, status transitions
-- [ ] **Goal Achievement Stats**: Points display, daily completion count
-- [ ] **Error Handling**: Comprehensive error states and recovery
-- [ ] **Accessibility**: ARIA labels, keyboard navigation for goal components
-- [ ] **End-to-End Tests**: Complete goal achievement workflow
-- [ ] **Cross-browser Testing**: Goal functionality across Safari, Chrome, Firefox
+#### Sprint 2.2: User Experience (Week 4)
+- [ ] **Goal Completion**: Celebration component
+- [ ] **Visual Polish**: Animations and micro-interactions
+- [ ] **Error Handling**: Graceful degradation
+- [ ] **Integration Testing**: Full workflow tests
 
 **Acceptance Criteria**:
-- Goal completion feels rewarding with appropriate celebrations
-- Smooth animations enhance user experience
-- All goal components meet WCAG accessibility standards
-- Error states provide clear user guidance
-- E2E tests pass consistently across browsers
+- Goal completion feels rewarding
+- Smooth animations and transitions
+- Errors handled gracefully
+- E2E tests pass consistently
 
-### Phase 3: Analytics, History & Advanced Features (Week 5-6)
+### Phase 3: Advanced Features (Week 5-6)
 **Duration**: 2 weeks  
 **Priority**: P1 (Important)
 
-#### Sprint 3.1: Analytics & Historical Data (Week 5)
-- [ ] **Goal History API**: Historical goal achievement data with pagination
-- [ ] **Analytics API**: Community goal insights and trends
-- [ ] **Goal History Components**: Visualization for historical data
-- [ ] **Analytics Dashboard**: Community insights UI
-- [ ] **Streak Tracking**: Goal completion streak calculation and display
-- [ ] **Data Archival**: Daily to history migration logic
-- [ ] **Performance Optimization**: Efficient bulk goal calculations
-- [ ] **Analytics Tests**: API and component tests for historical data
+#### Sprint 3.1: Analytics and History (Week 5)
+- [ ] **Goal History**: Historical tracking
+- [ ] **Analytics API**: Community insights
+- [ ] **Progress Charts**: Visual goal trends
+- [ ] **Streak Tracking**: Goal completion streaks
 
 **Acceptance Criteria**:
-- Users can view comprehensive goal history
-- Analytics provide meaningful community insights
-- Charts and graphs load quickly and accurately
-- Streak calculation is correct across timezone changes
-- Historical data queries perform efficiently
+- Users can view goal history
+- Analytics provide meaningful insights
+- Charts load quickly and are accurate
+- Streak calculation is correct
 
-#### Sprint 3.2: Monitoring & Observability (Week 6)
-- [ ] **Application Monitoring**: Goal service instrumentation with metrics
-- [ ] **Database Monitoring**: Query performance tracking for goal tables
-- [ ] **Alert Configuration**: Critical alerts for goal system health
-- [ ] **Grafana Dashboards**: Goal completion rates, performance metrics
-- [ ] **Audit Logging**: Track goal configuration changes
-- [ ] **Error Tracking**: Comprehensive error reporting for goal failures
-- [ ] **Business Metrics**: User engagement, retention tracking
+#### Sprint 3.2: Admin Features (Week 6)
+- [ ] **Goal Configuration**: Admin interface
+- [ ] **Goal Templates**: Pre-configured goal sets
+- [ ] **Bulk Operations**: Mass goal updates
+- [ ] **Monitoring**: Goal system observability
 
 **Acceptance Criteria**:
-- Comprehensive monitoring covers all goal system components
-- Alerts trigger appropriately for system issues
-- Dashboards provide clear insights into goal system health
-- All goal configuration changes are audited
-- Business metrics track goal feature impact
+- Admins can configure goals easily
+- Goal templates work correctly
+- Bulk operations are efficient
+- System monitoring is comprehensive
 
-### Phase 4: Performance, Scale & Production Readiness (Week 7-8)
+### Phase 4: Optimization and Launch (Week 7-8)
 **Duration**: 2 weeks  
-**Priority**: P1 (Important)
+**Priority**: P2 (Nice to Have)
 
-#### Sprint 4.1: Performance & Global Scale (Week 7)
-- [ ] **Redis Setup**: Caching infrastructure for goal data (Deferred from Sprint 1.1)
-  - [ ] Redis configuration for goal progress caching
-  - [ ] Cache invalidation strategies for real-time updates
-  - [ ] Timezone-aware cache keys and TTL management
-  - [ ] Cache warming for frequently accessed goal data
-- [ ] **Advanced Caching**: Timezone-aware Redis caching with invalidation
-- [ ] **Database Optimization**: Advanced indexing, query optimization for global scale
-- [ ] **Bulk Operations**: Efficient batch processing for goal calculations
-- [ ] **Load Testing**: High concurrency scenarios with users across multiple timezones
-- [ ] **Memory Optimization**: Frontend bundle size optimization
-- [ ] **Performance Benchmarking**: Goal system performance across different loads
-- [ ] **Timezone Stress Testing**: DST transitions, timezone changes, travel scenarios
+#### Sprint 4.1: Performance and Scale (Week 7)
+- [ ] **Caching Strategy**: Redis for goal data
+- [ ] **Database Optimization**: Query performance
+- [ ] **Load Testing**: High concurrency scenarios
+- [ ] **Memory Optimization**: Frontend bundle size
 
 **Acceptance Criteria**:
-- System handles 10,000+ concurrent users across different timezones
-- Redis caching operational for goal data (Deferred requirement)
-- Goal calculations cached effectively with proper invalidation
-- Database queries optimized for global user distribution
-- Load testing demonstrates system stability under peak usage
-- Frontend performance optimized for mobile networks
+- Goal calculations cached effectively
+- Database queries optimized
+- System handles 10k concurrent users
+- Frontend bundle size minimized
 
-#### Sprint 4.2: Production Launch & Documentation (Week 8)
-- [ ] **Feature Flags**: Gradual rollout capability for goal system
-- [ ] **Backup & Recovery**: Goal data backup and restore procedures
-- [ ] **User Documentation**: Comprehensive guides for goal system
-- [ ] **API Documentation**: Complete API reference with examples
-- [ ] **Admin Tools**: Goal configuration management interfaces
-- [ ] **Launch Strategy**: Beta testing with selected users
-- [ ] **Post-launch Monitoring**: Production health monitoring
-- [ ] **Cultural Review**: Islamic scholar validation of goal system
+#### Sprint 4.2: Launch Preparation (Week 8)
+- [ ] **Documentation**: User guides and API docs
+- [ ] **Feature Flags**: Gradual rollout capability
+- [ ] **Monitoring**: Production observability
+- [ ] **Launch Strategy**: Beta testing and feedback
 
 **Acceptance Criteria**:
-- Feature flags enable safe, gradual rollout
-- Complete backup and recovery procedures documented and tested
-- User and admin documentation is comprehensive and clear
-- Beta testing validates system with real users
-- Production monitoring provides complete system visibility
-- Islamic advisory board approves cultural alignment
-
-### Phase 5: Advanced Analytics & Future Enhancements (Week 9-10)
-**Duration**: 2 weeks  
-**Priority**: P2 (Enhancement)
-
-#### Sprint 5.1: Advanced Analytics & Insights (Week 9)
-- [ ] **Advanced Analytics**: Detailed goal performance insights
-- [ ] **Goal Trends**: Long-term progress analysis and patterns
-- [ ] **Community Features**: Goal achievement leaderboards (anonymous)
-- [ ] **Personalized Insights**: AI-driven goal recommendations
-- [ ] **Export Features**: Goal data export in multiple formats
-- [ ] **Mobile App Optimization**: Enhanced mobile experience for goals
-
-**Acceptance Criteria**:
-- Advanced analytics provide actionable user insights
-- Goal trends help users understand their spiritual journey
-- Community features maintain platform anonymity principles
-- Export functionality works across different formats
-
-#### Sprint 5.2: Future-Proofing & Enhancement Framework (Week 10)
-- [ ] **Goal Templates**: Pre-configured goal sets for different Islamic traditions
-- [ ] **Custom User Goals**: Framework for user-defined goals (future)
-- [ ] **Third-party Integrations**: Prayer time API integration for enhanced features
-- [ ] **Scalability Planning**: Architecture review for future growth
-- [ ] **A/B Testing Framework**: Goal feature experimentation capability
-- [ ] **Security Audit**: Comprehensive security review of goal system
-
-**Acceptance Criteria**:
-- Goal template system provides flexible Islamic practice options
-- Architecture supports future custom goal functionality
-- Security audit identifies and addresses any vulnerabilities
-- A/B testing framework enables safe feature experimentation
-
----
-
-### Cross-Phase Requirements
-
-#### **Continuous Integration & Quality**
-- **Automated Testing**: All phases include comprehensive test coverage
-- **Code Review**: All goal-related code reviewed by senior engineers
-- **Security Review**: Security implications assessed at each phase
-- **Performance Monitoring**: Continuous performance tracking throughout implementation
-
-#### **Cultural & Religious Alignment**
-- **Islamic Advisory Board**: Regular review of goal system alignment with Islamic values
-- **Flexibility**: System designed to accommodate different Islamic traditions
-- **Privacy**: User goal data kept completely private and anonymous
-
-#### **Risk Mitigation**
-- **Rollback Plans**: Each phase includes rollback procedures
-- **Gradual Deployment**: Feature flags enable safe, incremental rollout
-- **Monitoring**: Comprehensive system health monitoring at all levels
-- **Documentation**: Complete technical and user documentation maintained
+- Documentation is complete and clear
+- Feature flags enable safe rollout
+- Monitoring covers all key metrics
+- Beta feedback incorporated
 
 ---
 
@@ -1744,16 +1384,15 @@ describe('Daily Goals E2E', () => {
 
 #### Medium Risk (Probability: Medium, Impact: High)
 
-**R3: Timezone Complexity**
-- **Risk**: Timezone handling may introduce bugs in goal calculations and resets
-- **Impact**: Incorrect goal dates, missed resets, data inconsistency
+**R3: Islamic Calendar Integration**
+- **Risk**: Daily goal reset timing may not align with Islamic day boundaries
+- **Impact**: Goals reset at wrong time, cultural misalignment
 - **Mitigation**:
-  - Use established timezone libraries (date-fns-tz, Luxon)
-  - Comprehensive timezone testing across multiple regions
-  - Careful handling of DST transitions
-  - Fallback to UTC for invalid timezones
-  - Extensive integration testing
-- **Contingency**: Simplified UTC-only mode with user education on local time conversion
+  - Research Islamic prayer time APIs
+  - Implement timezone-aware goal resets
+  - Add configuration for different Islamic calendar interpretations
+  - Consult with Islamic scholars for guidance
+- **Contingency**: Default to midnight reset with future enhancement
 
 **R4: Data Migration Complexity**
 - **Risk**: Existing user data may not migrate cleanly to goal system
@@ -2001,12 +1640,6 @@ The Daily Goals feature represents a significant enhancement to the Tanafos plat
 2. **Technical Validation**: Proof-of-concept implementation for database performance
 3. **User Research**: Validate goal targets with community focus groups
 4. **Implementation Kickoff**: Begin Phase 1 development with database migration
-
-### Future Enhancements (Post-MVP)
-- **Admin Interface**: Web-based goal configuration when scale demands it
-- **Custom User Goals**: Allow users to set personal targets
-- **Goal Templates**: Pre-configured goal sets for different Islamic traditions
-- **Advanced Analytics**: Detailed goal performance insights
 
 This feature will strengthen Tanafos's position as the leading Islamic accountability platform while providing users with clear, culturally-aligned spiritual development targets.
 
