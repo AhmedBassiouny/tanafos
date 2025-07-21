@@ -9,6 +9,7 @@ import progressRoutes from './routes/progress.routes'
 import leaderboardRoutes from './routes/leaderboard.routes'
 import userRoutes from './routes/user.routes'
 import debugRoutes from './routes/debug.routes'
+import goalRoutes from './routes/goal.routes'
 
 
 const app = express()
@@ -41,6 +42,7 @@ app.use('/api/tasks', taskRoutes)
 app.use('/api/progress', progressRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/user', userRoutes)
+app.use('/api/goals', goalRoutes)
 app.use('/api/debug', debugRoutes)
 
 // 404 handler

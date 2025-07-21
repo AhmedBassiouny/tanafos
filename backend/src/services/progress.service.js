@@ -14,6 +14,7 @@ const database_1 = require("../config/database");
 const errorHandler_1 = require("../middleware/errorHandler");
 const library_1 = require("@prisma/client/runtime/library");
 const leaderboard_service_1 = require("./leaderboard.service");
+const goal_service_1 = require("./goal.service");
 class ProgressService {
     static logProgress(userId, data) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -109,13 +110,16 @@ class ProgressService {
             }));
             // Invalidate leaderboard cache since scores were updated
             leaderboard_service_1.LeaderboardService.invalidateCache(data.taskId);
+            // Check for goal completion and get updated goal progress
+            const goalCompletion = yield goal_service_1.GoalService.checkGoalCompletion(userId, data.taskId, logDate);
             return {
                 id: result.id,
                 taskId: result.taskId,
                 value: result.value.toNumber(),
                 pointsEarned: result.pointsEarned,
                 loggedDate: result.loggedDate,
-                task
+                task,
+                goalProgress: goalCompletion
             };
         });
     }

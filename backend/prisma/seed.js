@@ -70,6 +70,52 @@ function main() {
             }),
         ]);
         console.log(`Created ${tasks.length} tasks`);
+        // Create default Islamic practice goals based on design document
+        const dailyGoals = yield Promise.all([
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[0].id, // Quran Reading
+                    targetValue: 2.0,
+                    targetType: 'MINIMUM',
+                },
+            }),
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[1].id, // Prayer on Time
+                    targetValue: 5.0,
+                    targetType: 'EXACT',
+                },
+            }),
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[2].id, // Azkar & Dhikr
+                    targetValue: 2.0,
+                    targetType: 'MINIMUM',
+                },
+            }),
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[3].id, // Helping Others
+                    targetValue: 1.0,
+                    targetType: 'MINIMUM',
+                },
+            }),
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[4].id, // Charity
+                    targetValue: 1.0,
+                    targetType: 'MINIMUM',
+                },
+            }),
+            prisma.dailyGoal.create({
+                data: {
+                    taskId: tasks[5].id, // Seeking Knowledge
+                    targetValue: 30.0,
+                    targetType: 'MINIMUM',
+                },
+            }),
+        ]);
+        console.log(`Created ${dailyGoals.length} default Islamic practice goals`);
         // Create demo users
         const passwordHash = yield bcrypt_1.default.hash('demo123', 10);
         const demoUsers = yield Promise.all([

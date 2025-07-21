@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
 const progress_service_1 = require("../services/progress.service");
+const goal_service_1 = require("../services/goal.service");
 const database_1 = require("../config/database");
 const router = (0, express_1.Router)();
 // All user routes require authentication
@@ -35,6 +36,7 @@ router.get('/profile', (req, res, next) => __awaiter(void 0, void 0, void 0, fun
                 id: true,
                 username: true,
                 email: true,
+                timezone: true,
                 createdAt: true
             }
         });
@@ -43,6 +45,30 @@ router.get('/profile', (req, res, next) => __awaiter(void 0, void 0, void 0, fun
             return;
         }
         res.json(user);
+    }
+    catch (error) {
+        next(error);
+    }
+}));
+// PUT /api/user/timezone - Update user's timezone setting
+router.put('/timezone', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { timezone } = req.body;
+        if (!timezone || typeof timezone !== 'string') {
+            res.status(400).json({
+                success: false,
+                error: {
+                    code: 'INVALID_TIMEZONE',
+                    message: 'Timezone is required and must be a string.'
+                }
+            });
+            return;
+        }
+        const result = yield goal_service_1.GoalService.updateUserTimezone(req.user.userId, timezone);
+        res.json({
+            success: true,
+            data: result
+        });
     }
     catch (error) {
         next(error);

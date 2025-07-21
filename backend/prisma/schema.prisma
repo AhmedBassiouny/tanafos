@@ -18,12 +18,15 @@ model User {
   username     String   @unique @db.VarChar(50)
   email        String   @unique @db.VarChar(255)
   passwordHash String   @map("password_hash") @db.VarChar(255)
+  timezone     String   @default("UTC") @db.VarChar(50)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  progressLogs ProgressLog[]
-  userScores   UserScore[]
+  progressLogs      ProgressLog[]
+  userScores        UserScore[]
+  dailyGoalProgress DailyGoalProgress[]
+  dailyGoalHistory  DailyGoalHistory[]
 
   @@map("users")
 }
@@ -38,8 +41,11 @@ model Task {
   createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
-  progressLogs ProgressLog[]
-  userScores   UserScore[]
+  progressLogs      ProgressLog[]
+  userScores        UserScore[]
+  dailyGoal         DailyGoal?
+  dailyGoalProgress DailyGoalProgress[]
+  dailyGoalHistory  DailyGoalHistory[]
 
   @@map("tasks")
 }
@@ -84,4 +90,75 @@ model UserScore {
   @@index([totalPoints])
   @@index([taskId, totalPoints])
   @@map("user_scores")
+}
+
+enum GoalType {
+  EXACT     // Must hit exact target (e.g., 5 prayers)
+  MINIMUM   // Must reach at least target (e.g., 2+ azkar sessions)
+  MAXIMUM   // Should not exceed target (e.g., screen time limits)
+}
+
+enum GoalStatus {
+  NOT_STARTED   // 0% progress
+  IN_PROGRESS   // 1-99% progress
+  COMPLETED     // 100% progress (target reached)
+  EXCEEDED      // >100% progress (exceeded target)
+}
+
+model DailyGoal {
+  id          Int      @id @default(autoincrement())
+  taskId      Int      @unique @map("task_id")
+  targetValue Decimal  @db.Decimal(10, 2) @map("target_value")
+  targetType  GoalType @default(MINIMUM) @map("target_type")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("daily_goals")
+}
+
+model DailyGoalProgress {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @map("user_id")
+  taskId       Int        @map("task_id")
+  goalDate     DateTime   @db.Date @map("goal_date")
+  currentValue Decimal    @default(0) @db.Decimal(10, 2) @map("current_value")
+  targetValue  Decimal    @db.Decimal(10, 2) @map("target_value")
+  status       GoalStatus @default(NOT_STARTED) @map("status")
+  completedAt  DateTime?  @map("completed_at")
+  lastUpdated  DateTime   @updatedAt @map("last_updated")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId, goalDate])
+  @@index([userId, goalDate])
+  @@index([goalDate, status])
+  @@map("daily_goal_progress")
+}
+
+model DailyGoalHistory {
+  id             Int        @id @default(autoincrement())
+  userId         Int        @map("user_id")
+  taskId         Int        @map("task_id")
+  goalDate       DateTime   @db.Date @map("goal_date")
+  targetValue    Decimal    @db.Decimal(10, 2) @map("target_value")
+  finalValue     Decimal    @db.Decimal(10, 2) @map("final_value")
+  completionRate Decimal    @db.Decimal(5, 2) @map("completion_rate") // 0.00-999.99%
+  status         GoalStatus @map("status")
+  completedAt    DateTime?  @map("completed_at")
+  archivedAt     DateTime   @default(now()) @map("archived_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, goalDate])
+  @@index([taskId, goalDate])
+  @@index([goalDate, status])
+  @@map("daily_goal_history")
 }

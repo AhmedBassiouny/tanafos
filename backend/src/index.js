@@ -23,6 +23,7 @@ const progress_routes_1 = __importDefault(require("./routes/progress.routes"));
 const leaderboard_routes_1 = __importDefault(require("./routes/leaderboard.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
 const debug_routes_1 = __importDefault(require("./routes/debug.routes"));
+const goal_routes_1 = __importDefault(require("./routes/goal.routes"));
 const app = (0, express_1.default)();
 // Middleware
 app.use(express_1.default.json());
@@ -49,6 +50,7 @@ app.use('/api/tasks', task_routes_1.default);
 app.use('/api/progress', progress_routes_1.default);
 app.use('/api/leaderboard', leaderboard_routes_1.default);
 app.use('/api/user', user_routes_1.default);
+app.use('/api/goals', goal_routes_1.default);
 app.use('/api/debug', debug_routes_1.default);
 // 404 handler
 app.use((_req, res) => {

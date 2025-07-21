@@ -3,6 +3,7 @@ import { LogProgressInput } from '../types/progress'
 import { AppError } from '../middleware/errorHandler'
 import { Decimal } from '@prisma/client/runtime/library'
 import { LeaderboardService } from './leaderboard.service'
+import { GoalService } from './goal.service'
 
 export class ProgressService {
   static async logProgress(userId: number, data: LogProgressInput) {
@@ -109,13 +110,17 @@ export class ProgressService {
     // Invalidate leaderboard cache since scores were updated
     LeaderboardService.invalidateCache(data.taskId)
 
+    // Check for goal completion and get updated goal progress
+    const goalCompletion = await GoalService.checkGoalCompletion(userId, data.taskId, logDate)
+
     return {
       id: result.id,
       taskId: result.taskId,
       value: result.value.toNumber(),
       pointsEarned: result.pointsEarned,
       loggedDate: result.loggedDate,
-      task
+      task,
+      goalProgress: goalCompletion
     }
   }
 

@@ -1,6 +1,7 @@
 import { Router, Response, NextFunction } from 'express'
 import { authenticate } from '../middleware/auth'
 import { ProgressService } from '../services/progress.service'
+import { GoalService } from '../services/goal.service'
 import { prisma } from '../config/database'
 
 const router = Router()
@@ -27,6 +28,7 @@ router.get('/profile', async (req: any, res: Response, next: NextFunction) => {
         id: true,
         username: true,
         email: true,
+        timezone: true,
         createdAt: true
       }
     })
@@ -37,6 +39,33 @@ router.get('/profile', async (req: any, res: Response, next: NextFunction) => {
     }
 
     res.json(user)
+  } catch (error) {
+    next(error)
+  }
+})
+
+// PUT /api/user/timezone - Update user's timezone setting
+router.put('/timezone', async (req: any, res: Response, next: NextFunction) => {
+  try {
+    const { timezone } = req.body
+    
+    if (!timezone || typeof timezone !== 'string') {
+      res.status(400).json({ 
+        success: false,
+        error: {
+          code: 'INVALID_TIMEZONE',
+          message: 'Timezone is required and must be a string.'
+        }
+      })
+      return
+    }
+
+    const result = await GoalService.updateUserTimezone(req.user.userId, timezone)
+    
+    res.json({
+      success: true,
+      data: result
+    })
   } catch (error) {
     next(error)
   }
